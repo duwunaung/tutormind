@@ -7,7 +7,7 @@ import { generateDocx } from "@/lib/generators/docx";
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session) {
+    if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
