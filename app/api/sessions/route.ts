@@ -5,11 +5,25 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: Request) {
   try {
     const session = await auth();
+    console.log("Auth session:", session);
+
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, messages, subject } = await req.json();
+    const body = await req.json();
+    console.log("Request body:", JSON.stringify(body, null, 2));
+
+    const { title, messages, subject } = body;
+
+    if (!title || !messages || !subject) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    console.log("Saving session for userId:", session.user.id);
 
     const saved = await prisma.session.create({
       data: {
@@ -20,11 +34,13 @@ export async function POST(req: Request) {
       },
     });
 
+    console.log("Saved session:", saved);
+
     return NextResponse.json({ sessionId: saved.id });
   } catch (error) {
     console.error("Session save error:", error);
     return NextResponse.json(
-      { error: "Failed to save session" },
+      { error: "Something went wrong", details: String(error) },
       { status: 500 }
     );
   }

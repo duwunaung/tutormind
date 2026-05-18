@@ -82,11 +82,14 @@ export default function ChatPage() {
     };
 
     const endSession = async () => {
-        if (messages.length < 2) return;
+        if (messages.length < 2) {
+            console.log("Not enough messages:", messages.length);
+            return;
+        }
         setEnding(true);
+        console.log("Ending session with messages:", messages);
 
         try {
-            // Generate title from first user message
             const firstUserMsg =
                 messages.find((m) => m.role === "user")?.content || "Lesson Session";
             const title =
@@ -94,20 +97,30 @@ export default function ChatPage() {
                     ? firstUserMsg.substring(0, 50) + "..."
                     : firstUserMsg;
 
+            console.log("Sending to API:", { title, messages, subject });
+
             const res = await fetch("/api/sessions", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ title, messages, subject }),
             });
 
+            console.log("API response status:", res.status);
             const data = await res.json();
+            console.log("API response data:", data);
+
+            if (!res.ok) {
+                console.error("Failed to save session:", data);
+                setEnding(false);
+                return;
+            }
+
             router.push(`/lesson-plan/${data.sessionId}`);
         } catch (error) {
             console.error("Failed to end session:", error);
             setEnding(false);
         }
     };
-
     if (status === "loading") {
         return (
             <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -152,8 +165,8 @@ export default function ChatPage() {
                     >
                         <div
                             className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === "user"
-                                    ? "bg-blue-600 text-white rounded-br-sm"
-                                    : "bg-gray-800 text-gray-100 rounded-bl-sm"
+                                ? "bg-blue-600 text-white rounded-br-sm"
+                                : "bg-gray-800 text-gray-100 rounded-bl-sm"
                                 }`}
                         >
                             {msg.content.split("\n").map((line, j) => (
