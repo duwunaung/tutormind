@@ -132,13 +132,12 @@ export default function ChatPage() {
     return (
         <div className="min-h-screen bg-gray-950 flex flex-col">
             {/* Header */}
-            <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
-                <div>
-                    <h1 className="text-white font-semibold">TutorMind</h1>
-                    <p className="text-gray-400 text-xs">
-                        {subject} · {gradeLevel}
-                    </p>
-                </div>
+            <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-10">                <div>
+                <h1 className="text-white font-semibold">TutorMind</h1>
+                <p className="text-gray-400 text-xs">
+                    {subject} · {gradeLevel}
+                </p>
+            </div>
                 <div className="flex gap-2">
                     <button
                         onClick={() => router.push("/dashboard")}

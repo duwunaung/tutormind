@@ -1,9 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+// Required for Neon serverless in Node.js environment
+neonConfig.webSocketConstructor = ws;
+
+declare global {
+  var prisma: PrismaClient | undefined;
+}
 
 function createPrismaClient() {
   const adapter = new PrismaNeon({
@@ -12,6 +17,10 @@ function createPrismaClient() {
   return new PrismaClient({ adapter });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+const prisma = global.prisma || createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== "production") {
+  global.prisma = prisma;
+}
+
+export { prisma };
