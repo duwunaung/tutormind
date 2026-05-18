@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const SUBJECTS = ["Math", "Science", "English / Language Arts", "History"];
+const SUBJECTS = ["Math", "Science", "English / Language Arts", "History", "Software Engineering"];
 const GRADE_LEVELS = [
   "Elementary (K-5)",
   "Middle School (6-8)",

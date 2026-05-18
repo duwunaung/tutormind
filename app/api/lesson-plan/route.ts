@@ -2,6 +2,7 @@ import Groq from "groq-sdk";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { jsonrepair } from "jsonrepair";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
 
         const { sessionId } = await req.json();
 
-        // ✅ Check if lesson plan already exists for this session
+        // Check if lesson plan already exists
         const existing = await prisma.lessonPlan.findUnique({
             where: { sessionId },
         });
@@ -43,7 +44,9 @@ export async function POST(req: Request) {
 CHAT SESSION:
 ${chatHistory}
 
-Generate a detailed lesson plan in this EXACT JSON format:
+Generate a detailed lesson plan in this EXACT JSON format. 
+IMPORTANT: In description fields, use plain text only. Do NOT use code blocks, backticks, or special characters inside string values.
+
 {
   "title": "Lesson title here",
   "subject": "${chatSession.subject}",
@@ -61,19 +64,21 @@ Generate a detailed lesson plan in this EXACT JSON format:
   "notes": "Any additional teaching notes"
 }
 
-Return ONLY the JSON, no extra text.`;
+Return ONLY the JSON object. No markdown, no backticks, no code blocks, no extra text.`;
 
         const completion = await groq.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             messages: [{ role: "user", content: prompt }],
             max_tokens: 2048,
+            response_format: { type: "json_object" }, // ✅ Force JSON mode
         });
 
         const raw = completion.choices[0]?.message?.content || "{}";
+        console.log("Raw AI response:", raw); // ✅ Log for debugging
 
-        // Clean and parse JSON
-        const clean = raw.replace(/```json|```/g, "").trim();
-        const structure = JSON.parse(clean);
+        // Use jsonrepair to fix any malformed JSON
+        const repaired = jsonrepair(raw);
+        const structure = JSON.parse(repaired);
 
         // Save lesson plan to DB
         const lessonPlan = await prisma.lessonPlan.create({
