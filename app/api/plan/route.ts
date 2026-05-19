@@ -40,20 +40,22 @@ export async function POST(req: Request) {
 function buildPrompt(answers: any, subject: string): string {
   if (answers.planType === "course") {
     return `Create a full ${subject} course plan with the following details:
+- Course title: ${answers.planTitle}
 - Course duration: ${answers.courseDuration}
 - Sessions per week: ${answers.sessionsPerWeek}
 - Session length: ${answers.sessionLength}
 - Student level: ${answers.studentLevel}
-- Main goal: ${answers.goal}${answers.notes ? `\n- Special notes: ${answers.notes}` : ""}
+- Main goal: ${answers.goal}${answers.instructions ? `\n- Specific instructions: ${answers.instructions}` : ""}
 
 Please generate a comprehensive course plan with sections, objectives, activities, and assessments.`;
   }
 
   return `Create a ${subject} lesson plan with the following details:
+- Lesson title: ${answers.planTitle}
 - Topic: ${answers.topic}
 - Session length: ${answers.sessionLength}
 - Student level: ${answers.studentLevel}
-- Lesson goal: ${answers.lessonGoal}${answers.notes ? `\n- Special notes: ${answers.notes}` : ""}
+- Lesson goal: ${answers.lessonGoal}${answers.instructions ? `\n- Specific instructions: ${answers.instructions}` : ""}
 
 Please generate a detailed lesson plan with introduction, main activity, wrap-up, and assessment.`;
 }
