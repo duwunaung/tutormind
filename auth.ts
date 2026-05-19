@@ -1,10 +1,15 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/auth.config";
 
-// Full auth with DB — Node.js runtime only, never imported by proxy.ts
+const loginSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(1, "Password is required"),
+});
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
@@ -14,17 +19,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        // Validate shape and format before touching the DB
+        const parsed = loginSchema.safeParse(credentials);
+        if (!parsed.success) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
+        const { email, password } = parsed.data;
+
+        const user = await prisma.user.findUnique({ where: { email } });
         if (!user) return null;
 
-        const passwordMatch = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
+        const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) return null;
 
         return { id: user.id, email: user.email, name: user.name };

@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import { authConfig } from "@/auth.config";
 
-// Use Edge-safe authConfig only — no DB, no Node.js modules
 const { auth } = NextAuth(authConfig);
 
 export const proxy = auth;
