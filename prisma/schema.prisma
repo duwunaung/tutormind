@@ -23,6 +23,7 @@ model Session {
   title       String
   messages    Json
   subject     String
+  planType    String       @default("lesson") 
   createdAt   DateTime     @default(now())
   user        User         @relation(fields: [userId], references: [id])
   userId      String
