@@ -151,7 +151,7 @@ export default function LessonPlanPage() {
           </button>
           <div className="flex gap-2">
             <button
-              onClick={() => router.push("/chat")}
+              onClick={() => router.push("/new-plan")}
               className="bg-gray-800 hover:bg-gray-700 text-white text-sm px-4 py-2 rounded-lg transition"
             >
               + New Session
