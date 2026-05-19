@@ -1,10 +1,9 @@
-import Groq from "groq-sdk";
+import { groq } from "@/lib/ai";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { jsonrepair } from "jsonrepair";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: Request) {
     try {
