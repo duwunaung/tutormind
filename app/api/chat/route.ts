@@ -1,9 +1,8 @@
-import Groq from "groq-sdk";
+import { groq } from "@/lib/ai";
 import { auth } from "@/auth";
 import { getSystemPrompt } from "@/lib/prompts";
 import { NextResponse } from "next/server";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: Request) {
   try {
