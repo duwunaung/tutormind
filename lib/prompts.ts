@@ -46,10 +46,16 @@ Always structure suggestions in a practical, classroom-ready format.`,
 };
 
 
-
 export const getSystemPrompt = (subject: string): string => {
-  return (
+  const base =
     SUBJECT_PROMPTS[subject] ||
-    `You are an expert tutor assistant. Help plan engaging and effective lessons.`
+    `You are an expert tutor assistant. Help plan engaging and effective lessons.`;
+
+  return (
+    base +
+    `\n\nIMPORTANT INSTRUCTIONS:
+- Ask clarifying questions naturally to gather: plan type (course or lesson), topic, student level, duration, goals, and any special instructions.
+- Once you have enough information to generate a plan, end your message with exactly this token on its own line: [READY_TO_GENERATE]
+- Only include [READY_TO_GENERATE] when you have collected enough details to build a complete plan. Do not include it in every message.`
   );
 };
