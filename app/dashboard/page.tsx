@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import AppHeader from "@/app/components/AppHeader";
+
 
 type LessonPlan = {
   id: string;
@@ -92,25 +94,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-white font-bold text-lg">TutorMind</h1>
-            <p className="text-gray-400 text-xs">
-              {(session?.user as any)?.subject} · {(session?.user as any)?.gradeLevel}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-gray-400 text-sm">{session?.user?.name}</span>
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
+      <AppHeader />
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-6 py-8">

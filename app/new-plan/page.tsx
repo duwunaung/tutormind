@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import AppHeader from "@/app/components/AppHeader";
 
 type PlanType = "course" | "lesson";
 type Mode = "pick" | "wizard";
@@ -173,7 +174,7 @@ export default function NewPlanPage() {
     if (loading) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/plan", {  
+      const res = await fetch("/api/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: { ...answers, ...resolved }, subject }),
@@ -299,33 +300,8 @@ export default function NewPlanPage() {
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
-          <h1 className="text-white font-bold text-lg">TutorMind</h1>
-          <div className="flex items-center gap-2">
-            {/* Mode toggle — only visible once in wizard */}
-            {mode === "wizard" && (
-              <div className="flex bg-gray-800 rounded-lg p-1 text-xs">
-                <button className="px-3 py-1.5 rounded-md bg-blue-600 text-white font-medium">
-                  🧙 Wizard
-                </button>
-                <button
-                  onClick={() => router.push("/chat")}
-                  className="px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium"
-                >
-                  💬 Chat
-                </button>
-              </div>
-            )}
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition"
-            >
-              ← Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
+      <AppHeader mode="wizard" />
+
 
       <div className="max-w-lg mx-auto px-6 mt-12">
         {mode === "pick" ? (
