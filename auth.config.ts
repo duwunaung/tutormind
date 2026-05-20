@@ -23,11 +23,17 @@ export const authConfig: NextAuthConfig = {
       return true;
     },
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.subject = (user as any).subject;
+        token.gradeLevel = (user as any).gradeLevel;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (token && session.user) session.user.id = token.id as string;
+      if (session.user) {
+        (session.user as any).subject = token.subject;
+        (session.user as any).gradeLevel = token.gradeLevel;
+      }
       return session;
     },
   },
