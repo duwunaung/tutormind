@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 type Message = {
     role: "user" | "assistant";
     content: string;
+    ready?: boolean;
 };
 
 export default function ChatPage() {
@@ -66,6 +67,7 @@ export default function ChatPage() {
                 {
                     role: "assistant",
                     content: data.message || "Sorry, I couldn't get a response. Please try again.",
+                    ready: data.ready || false,
                 },
             ]);
         } catch (error) {
@@ -83,11 +85,11 @@ export default function ChatPage() {
 
     const endSession = async () => {
         if (messages.length < 2) {
-            
+
             return;
         }
         setEnding(true);
-        
+
 
         try {
             const firstUserMsg =
@@ -97,7 +99,7 @@ export default function ChatPage() {
                     ? firstUserMsg.substring(0, 50) + "..."
                     : firstUserMsg;
 
-            
+
 
             const res = await fetch("/api/sessions", {
                 method: "POST",
@@ -105,9 +107,9 @@ export default function ChatPage() {
                 body: JSON.stringify({ title, messages, subject }),
             });
 
-            
+
             const data = await res.json();
-            
+
 
             if (!res.ok) {
                 console.error("Failed to save session:", data);
@@ -156,40 +158,49 @@ export default function ChatPage() {
                     >
                         Dashboard
                     </button>
-                    <button
-                        onClick={endSession}
-                        disabled={ending || messages.length < 2}
-                        className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm px-4 py-1.5 rounded-lg transition"
-                    >
-                        {ending ? "Saving..." : "End Session →"}
-                    </button>
                 </div>
             </div>
 
             {/* Messages */}
             < div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-3xl mx-auto w-full" >
-                {
-                    messages.map((msg, i) => (
+                {messages.map((msg, i) => (
+                    <div
+                        key={i}
+                        className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
+                    >
                         <div
-                            key={i}
-                            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                        >
-                            <div
-                                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === "user"
+                            className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === "user"
                                     ? "bg-blue-600 text-white rounded-br-sm"
                                     : "bg-gray-800 text-gray-100 rounded-bl-sm"
-                                    }`}
-                            >
-                                {msg.content.split("\n").map((line, j) => (
-                                    <span key={j}>
-                                        {line}
-                                        {j < msg.content.split("\n").length - 1 && <br />}
-                                    </span>
-                                ))}
-                            </div>
+                                }`}
+                        >
+                            {msg.content.split("\n").map((line, j) => (
+                                <span key={j}>
+                                    {line}
+                                    {j < msg.content.split("\n").length - 1 && <br />}
+                                </span>
+                            ))}
                         </div>
-                    ))
-                }
+
+                        {/* Inline generate button — only on the ready message */}
+                        {msg.ready && (
+                            <button
+                                onClick={endSession}
+                                disabled={ending}
+                                className="mt-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-sm px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2"
+                            >
+                                {ending ? (
+                                    <>
+                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    "✨ Generate My Plan"
+                                )}
+                            </button>
+                        )}
+                    </div>
+                ))}
 
                 {
                     loading && (
