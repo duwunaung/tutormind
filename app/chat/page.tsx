@@ -138,7 +138,18 @@ export default function ChatPage() {
                     {subject} · {gradeLevel}
                 </p>
             </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                    <div className="flex bg-gray-800 rounded-lg p-1 text-xs">
+                        <button
+                            onClick={() => router.push("/new-plan")}
+                            className="px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium"
+                        >
+                            🧙 Wizard
+                        </button>
+                        <button className="px-3 py-1.5 rounded-md bg-blue-600 text-white font-medium">
+                            💬 Chat
+                        </button>
+                    </div>
                     <button
                         onClick={() => router.push("/dashboard")}
                         className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition"
@@ -156,44 +167,48 @@ export default function ChatPage() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-3xl mx-auto w-full">
-                {messages.map((msg, i) => (
-                    <div
-                        key={i}
-                        className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                    >
+            < div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-3xl mx-auto w-full" >
+                {
+                    messages.map((msg, i) => (
                         <div
-                            className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === "user"
-                                ? "bg-blue-600 text-white rounded-br-sm"
-                                : "bg-gray-800 text-gray-100 rounded-bl-sm"
-                                }`}
+                            key={i}
+                            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                         >
-                            {msg.content.split("\n").map((line, j) => (
-                                <span key={j}>
-                                    {line}
-                                    {j < msg.content.split("\n").length - 1 && <br />}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                ))}
-
-                {loading && (
-                    <div className="flex justify-start">
-                        <div className="bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3">
-                            <div className="flex gap-1">
-                                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0ms]" />
-                                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:150ms]" />
-                                <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                            <div
+                                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === "user"
+                                    ? "bg-blue-600 text-white rounded-br-sm"
+                                    : "bg-gray-800 text-gray-100 rounded-bl-sm"
+                                    }`}
+                            >
+                                {msg.content.split("\n").map((line, j) => (
+                                    <span key={j}>
+                                        {line}
+                                        {j < msg.content.split("\n").length - 1 && <br />}
+                                    </span>
+                                ))}
                             </div>
                         </div>
-                    </div>
-                )}
+                    ))
+                }
+
+                {
+                    loading && (
+                        <div className="flex justify-start">
+                            <div className="bg-gray-800 rounded-2xl rounded-bl-sm px-4 py-3">
+                                <div className="flex gap-1">
+                                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0ms]" />
+                                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:150ms]" />
+                                    <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
                 <div ref={bottomRef} />
-            </div>
+            </div >
 
             {/* Input */}
-            <div className="bg-gray-900 border-t border-gray-800 px-4 py-3">
+            < div className="bg-gray-900 border-t border-gray-800 px-4 py-3" >
                 <div className="max-w-3xl mx-auto flex gap-2">
                     <input
                         type="text"
@@ -211,7 +226,7 @@ export default function ChatPage() {
                         Send
                     </button>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

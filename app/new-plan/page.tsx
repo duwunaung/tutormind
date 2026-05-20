@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 type PlanType = "course" | "lesson";
+type Mode = "pick" | "wizard";
 
 interface Answers {
   planType: PlanType | null;
@@ -47,7 +48,6 @@ function ChoiceButton({
   );
 }
 
-// Choices with "Other" option that reveals a text input
 function ChoicesWithOther({
   options, selected, customValue, onSelect, onCustomChange, placeholder,
 }: {
@@ -63,18 +63,9 @@ function ChoicesWithOther({
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         {options.map((o) => (
-          <ChoiceButton
-            key={o}
-            label={o}
-            selected={selected === o}
-            onClick={() => onSelect(o)}
-          />
+          <ChoiceButton key={o} label={o} selected={selected === o} onClick={() => onSelect(o)} />
         ))}
-        <ChoiceButton
-          label="✏️ Other"
-          selected={isOther}
-          onClick={() => onSelect("other")}
-        />
+        <ChoiceButton label="✏️ Other" selected={isOther} onClick={() => onSelect("other")} />
       </div>
       {isOther && (
         <input
@@ -112,6 +103,7 @@ export default function NewPlanPage() {
   const router = useRouter();
   const subject = (session?.user as any)?.subject ?? "your subject";
 
+  const [mode, setMode] = useState<Mode>("pick");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [answers, setAnswers] = useState<Answers>({
@@ -134,11 +126,8 @@ export default function NewPlanPage() {
   const set = (key: keyof Answers, value: string) =>
     setAnswers((prev) => ({ ...prev, [key]: value }));
 
-  // Course: 1(type) 2(duration) 3(freq) 4(length) 5(level) 6(goal) 7(title) 8(instructions)
-  // Lesson: 1(type) 2(topic)    3(length)          4(level) 5(goal) 6(title) 7(instructions)
   const totalSteps = answers.planType === "course" ? 8 : 7;
 
-  // Resolve actual value (preset or custom)
   const resolved = {
     courseDuration: answers.courseDuration === "other" ? answers.courseDurationCustom : answers.courseDuration,
     sessionsPerWeek: answers.sessionsPerWeek === "other" ? answers.sessionsPerWeekCustom : answers.sessionsPerWeek,
@@ -147,7 +136,6 @@ export default function NewPlanPage() {
 
   const canNext = (): boolean => {
     if (step === 1) return !!answers.planType;
-
     if (answers.planType === "course") {
       if (step === 2) return !!resolved.courseDuration.trim();
       if (step === 3) return !!resolved.sessionsPerWeek.trim();
@@ -155,37 +143,31 @@ export default function NewPlanPage() {
       if (step === 5) return !!answers.studentLevel;
       if (step === 6) return !!answers.goal;
       if (step === 7) return !!answers.planTitle.trim();
-      if (step === 8) return true; // instructions optional
+      if (step === 8) return true;
     }
-
     if (answers.planType === "lesson") {
       if (step === 2) return !!answers.topic.trim();
       if (step === 3) return !!resolved.sessionLength.trim();
       if (step === 4) return !!answers.studentLevel;
       if (step === 5) return !!answers.lessonGoal;
       if (step === 6) return !!answers.planTitle.trim();
-      if (step === 7) return true; // instructions optional
+      if (step === 7) return true;
     }
-
     return true;
   };
 
-  // ── Enter key handler ─────────────────────────────────────────────
   useEffect(() => {
+    if (mode !== "wizard") return; // don't intercept on pick screen
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept Enter inside textareas
       if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
       if (e.key === "Enter" && canNext()) {
-        if (step < totalSteps) {
-          setStep((s) => s + 1);
-        } else {
-          handleGenerate();
-        }
+        if (step < totalSteps) setStep((s) => s + 1);
+        else handleGenerate();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [step, answers, totalSteps]);
+  }, [step, answers, totalSteps, mode]);
 
   const handleGenerate = async () => {
     if (loading) return;
@@ -197,9 +179,7 @@ export default function NewPlanPage() {
         body: JSON.stringify({ answers: { ...answers, ...resolved }, subject }),
       });
       const data = await res.json();
-      if (data.sessionId) {
-        router.push(`/lesson-plan/${data.sessionId}`);
-      }
+      if (data.sessionId) router.push(`/lesson-plan/${data.sessionId}`);
     } catch (e) {
       console.error(e);
     } finally {
@@ -217,229 +197,102 @@ export default function NewPlanPage() {
 
   // ── Step renderer ─────────────────────────────────────────────────
   const renderStep = () => {
-    // STEP 1 — Plan type
     if (step === 1) {
       return (
-        <StepWrapper
-          title={`Let's build a ${subject} plan 👋`}
-          subtitle="What would you like to create?"
-        >
+        <StepWrapper title={`Let's build a ${subject} plan 👋`} subtitle="What would you like to create?">
           <div className="flex gap-3">
-            <ChoiceButton
-              label="📚 Course Plan"
-              selected={answers.planType === "course"}
-              onClick={() => set("planType", "course")}
-            />
-            <ChoiceButton
-              label="📝 Lesson Plan"
-              selected={answers.planType === "lesson"}
-              onClick={() => set("planType", "lesson")}
-            />
+            <ChoiceButton label="📚 Course Plan" selected={answers.planType === "course"} onClick={() => set("planType", "course")} />
+            <ChoiceButton label="📝 Lesson Plan" selected={answers.planType === "lesson"} onClick={() => set("planType", "lesson")} />
           </div>
         </StepWrapper>
       );
     }
 
-    // ── COURSE STEPS ──────────────────────────────────────────────
     if (answers.planType === "course") {
-      if (step === 2)
-        return (
-          <StepWrapper title="How long is the course?" subtitle="Total duration">
-            <ChoicesWithOther
-              options={["1 week", "2 weeks", "1 month", "3 months", "6 months"]}
-              selected={answers.courseDuration}
-              customValue={answers.courseDurationCustom}
-              onSelect={(v) => set("courseDuration", v)}
-              onCustomChange={(v) => set("courseDurationCustom", v)}
-              placeholder="e.g. 2 months, 10 weeks..."
-            />
-          </StepWrapper>
-        );
-
-      if (step === 3)
-        return (
-          <StepWrapper title="Sessions per week?" subtitle="How often will you meet?">
-            <ChoicesWithOther
-              options={["1x", "2x", "3x", "5x (daily)"]}
-              selected={answers.sessionsPerWeek}
-              customValue={answers.sessionsPerWeekCustom}
-              onSelect={(v) => set("sessionsPerWeek", v)}
-              onCustomChange={(v) => set("sessionsPerWeekCustom", v)}
-              placeholder="e.g. 4x, every other day..."
-            />
-          </StepWrapper>
-        );
-
-      if (step === 4)
-        return (
-          <StepWrapper title="How long is each session?" subtitle="Session length">
-            <ChoicesWithOther
-              options={["30 min", "45 min", "1 hour", "1.5 hours"]}
-              selected={answers.sessionLength}
-              customValue={answers.sessionLengthCustom}
-              onSelect={(v) => set("sessionLength", v)}
-              onCustomChange={(v) => set("sessionLengthCustom", v)}
-              placeholder="e.g. 2 hours, 20 min..."
-            />
-          </StepWrapper>
-        );
-
-      if (step === 5)
-        return (
-          <StepWrapper title="What's the student's level?" subtitle="Current level">
-            <div className="flex flex-wrap gap-2">
-              {["Beginner", "Intermediate", "Advanced"].map((o) => (
-                <ChoiceButton
-                  key={o} label={o}
-                  selected={answers.studentLevel === o}
-                  onClick={() => set("studentLevel", o)}
-                />
-              ))}
-            </div>
-          </StepWrapper>
-        );
-
-      if (step === 6)
-        return (
-          <StepWrapper title="What's the main goal?" subtitle="Learning outcome">
-            <div className="flex flex-wrap gap-2">
-              {["Exam prep", "Fill knowledge gaps", "Get ahead", "General mastery"].map((o) => (
-                <ChoiceButton
-                  key={o} label={o}
-                  selected={answers.goal === o}
-                  onClick={() => set("goal", o)}
-                />
-              ))}
-            </div>
-          </StepWrapper>
-        );
-
-      if (step === 7)
-        return (
-          <StepWrapper
-            title="What's the course title?"
-            subtitle="Give your course a name — e.g. Logic First Python, Python for Data Mastery"
-          >
-            <input
-              autoFocus
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g. Logic First Python"
-              value={answers.planTitle}
-              onChange={(e) => set("planTitle", e.target.value)}
-            />
-          </StepWrapper>
-        );
-
-      if (step === 8)
-        return (
-          <StepWrapper
-            title="Any specific instructions?"
-            subtitle="Optional — e.g. OOP must include, API not included, student has dyslexia"
-          >
-            <textarea
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              placeholder="Leave blank to skip..."
-              value={answers.instructions}
-              onChange={(e) => set("instructions", e.target.value)}
-            />
-          </StepWrapper>
-        );
+      if (step === 2) return (
+        <StepWrapper title="How long is the course?" subtitle="Total duration">
+          <ChoicesWithOther options={["1 week", "2 weeks", "1 month", "3 months", "6 months"]} selected={answers.courseDuration} customValue={answers.courseDurationCustom} onSelect={(v) => set("courseDuration", v)} onCustomChange={(v) => set("courseDurationCustom", v)} placeholder="e.g. 2 months, 10 weeks..." />
+        </StepWrapper>
+      );
+      if (step === 3) return (
+        <StepWrapper title="Sessions per week?" subtitle="How often will you meet?">
+          <ChoicesWithOther options={["1x", "2x", "3x", "5x (daily)"]} selected={answers.sessionsPerWeek} customValue={answers.sessionsPerWeekCustom} onSelect={(v) => set("sessionsPerWeek", v)} onCustomChange={(v) => set("sessionsPerWeekCustom", v)} placeholder="e.g. 4x, every other day..." />
+        </StepWrapper>
+      );
+      if (step === 4) return (
+        <StepWrapper title="How long is each session?" subtitle="Session length">
+          <ChoicesWithOther options={["30 min", "45 min", "1 hour", "1.5 hours"]} selected={answers.sessionLength} customValue={answers.sessionLengthCustom} onSelect={(v) => set("sessionLength", v)} onCustomChange={(v) => set("sessionLengthCustom", v)} placeholder="e.g. 2 hours, 20 min..." />
+        </StepWrapper>
+      );
+      if (step === 5) return (
+        <StepWrapper title="What's the student's level?" subtitle="Current level">
+          <div className="flex flex-wrap gap-2">
+            {["Beginner", "Intermediate", "Advanced"].map((o) => (
+              <ChoiceButton key={o} label={o} selected={answers.studentLevel === o} onClick={() => set("studentLevel", o)} />
+            ))}
+          </div>
+        </StepWrapper>
+      );
+      if (step === 6) return (
+        <StepWrapper title="What's the main goal?" subtitle="Learning outcome">
+          <div className="flex flex-wrap gap-2">
+            {["Exam prep", "Fill knowledge gaps", "Get ahead", "General mastery"].map((o) => (
+              <ChoiceButton key={o} label={o} selected={answers.goal === o} onClick={() => set("goal", o)} />
+            ))}
+          </div>
+        </StepWrapper>
+      );
+      if (step === 7) return (
+        <StepWrapper title="What's the course title?" subtitle="Give your course a name — e.g. Logic First Python, Python for Data Mastery">
+          <input autoFocus className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. Logic First Python" value={answers.planTitle} onChange={(e) => set("planTitle", e.target.value)} />
+        </StepWrapper>
+      );
+      if (step === 8) return (
+        <StepWrapper title="Any specific instructions?" subtitle="Optional — e.g. OOP must include, API not included, student has dyslexia">
+          <textarea className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" rows={4} placeholder="Leave blank to skip..." value={answers.instructions} onChange={(e) => set("instructions", e.target.value)} />
+        </StepWrapper>
+      );
     }
 
-    // ── LESSON STEPS ──────────────────────────────────────────────
     if (answers.planType === "lesson") {
-      if (step === 2)
-        return (
-          <StepWrapper
-            title="What's the topic?"
-            subtitle="e.g. fractions, Shakespeare, photosynthesis"
-          >
-            <input
-              autoFocus
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Type a topic..."
-              value={answers.topic}
-              onChange={(e) => set("topic", e.target.value)}
-            />
-          </StepWrapper>
-        );
-
-      if (step === 3)
-        return (
-          <StepWrapper title="How long is the session?" subtitle="Session length">
-            <ChoicesWithOther
-              options={["30 min", "45 min", "1 hour"]}
-              selected={answers.sessionLength}
-              customValue={answers.sessionLengthCustom}
-              onSelect={(v) => set("sessionLength", v)}
-              onCustomChange={(v) => set("sessionLengthCustom", v)}
-              placeholder="e.g. 1.5 hours, 20 min..."
-            />
-          </StepWrapper>
-        );
-
-      if (step === 4)
-        return (
-          <StepWrapper title="What's the student's level?" subtitle="Current level">
-            <div className="flex flex-wrap gap-2">
-              {["Beginner", "Intermediate", "Advanced"].map((o) => (
-                <ChoiceButton
-                  key={o} label={o}
-                  selected={answers.studentLevel === o}
-                  onClick={() => set("studentLevel", o)}
-                />
-              ))}
-            </div>
-          </StepWrapper>
-        );
-
-      if (step === 5)
-        return (
-          <StepWrapper title="Goal for this lesson?" subtitle="What should the student achieve?">
-            <div className="flex flex-wrap gap-2">
-              {["Introduce concept", "Practice & drill", "Review & test", "Project based"].map((o) => (
-                <ChoiceButton
-                  key={o} label={o}
-                  selected={answers.lessonGoal === o}
-                  onClick={() => set("lessonGoal", o)}
-                />
-              ))}
-            </div>
-          </StepWrapper>
-        );
-
-      if (step === 6)
-        return (
-          <StepWrapper
-            title="What's the lesson title?"
-            subtitle="Give your lesson a name — e.g. Intro to Loops, Understanding Shakespeare's Sonnets"
-          >
-            <input
-              autoFocus
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g. Intro to Loops"
-              value={answers.planTitle}
-              onChange={(e) => set("planTitle", e.target.value)}
-            />
-          </StepWrapper>
-        );
-
-      if (step === 7)
-        return (
-          <StepWrapper
-            title="Any specific instructions?"
-            subtitle="Optional — e.g. focus on real-world examples, no theory heavy content"
-          >
-            <textarea
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              placeholder="Leave blank to skip..."
-              value={answers.instructions}
-              onChange={(e) => set("instructions", e.target.value)}
-            />
-          </StepWrapper>
-        );
+      if (step === 2) return (
+        <StepWrapper title="What's the topic?" subtitle="e.g. fractions, Shakespeare, photosynthesis">
+          <input autoFocus className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type a topic..." value={answers.topic} onChange={(e) => set("topic", e.target.value)} />
+        </StepWrapper>
+      );
+      if (step === 3) return (
+        <StepWrapper title="How long is the session?" subtitle="Session length">
+          <ChoicesWithOther options={["30 min", "45 min", "1 hour"]} selected={answers.sessionLength} customValue={answers.sessionLengthCustom} onSelect={(v) => set("sessionLength", v)} onCustomChange={(v) => set("sessionLengthCustom", v)} placeholder="e.g. 1.5 hours, 20 min..." />
+        </StepWrapper>
+      );
+      if (step === 4) return (
+        <StepWrapper title="What's the student's level?" subtitle="Current level">
+          <div className="flex flex-wrap gap-2">
+            {["Beginner", "Intermediate", "Advanced"].map((o) => (
+              <ChoiceButton key={o} label={o} selected={answers.studentLevel === o} onClick={() => set("studentLevel", o)} />
+            ))}
+          </div>
+        </StepWrapper>
+      );
+      if (step === 5) return (
+        <StepWrapper title="Goal for this lesson?" subtitle="What should the student achieve?">
+          <div className="flex flex-wrap gap-2">
+            {["Introduce concept", "Practice & drill", "Review & test", "Project based"].map((o) => (
+              <ChoiceButton key={o} label={o} selected={answers.lessonGoal === o} onClick={() => set("lessonGoal", o)} />
+            ))}
+          </div>
+        </StepWrapper>
+      );
+      if (step === 6) return (
+        <StepWrapper title="What's the lesson title?" subtitle="Give your lesson a name — e.g. Intro to Loops, Understanding Shakespeare's Sonnets">
+          <input autoFocus className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. Intro to Loops" value={answers.planTitle} onChange={(e) => set("planTitle", e.target.value)} />
+        </StepWrapper>
+      );
+      if (step === 7) return (
+        <StepWrapper title="Any specific instructions?" subtitle="Optional — e.g. focus on real-world examples, no theory heavy content">
+          <textarea className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" rows={4} placeholder="Leave blank to skip..." value={answers.instructions} onChange={(e) => set("instructions", e.target.value)} />
+        </StepWrapper>
+      );
     }
   };
 
@@ -450,77 +303,131 @@ export default function NewPlanPage() {
       <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <h1 className="text-white font-bold text-lg">TutorMind</h1>
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition"
-          >
-            ← Dashboard
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Mode toggle — only visible once in wizard */}
+            {mode === "wizard" && (
+              <div className="flex bg-gray-800 rounded-lg p-1 text-xs">
+                <button className="px-3 py-1.5 rounded-md bg-blue-600 text-white font-medium">
+                  🧙 Wizard
+                </button>
+                <button
+                  onClick={() => router.push("/chat")}
+                  className="px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium"
+                >
+                  💬 Chat
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition"
+            >
+              ← Dashboard
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-6 mt-12">
-        {/* Progress bar */}
-        <div className="mb-6">
-          <div className="flex justify-between text-xs text-gray-500 mb-2">
-            <span>Step {step} of {totalSteps}</span>
-            <span>{Math.round((step / totalSteps) * 100)}%</span>
+        {mode === "pick" ? (
+          /* ── Mode picker ── */
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-white text-xl font-semibold">How would you like to create your plan?</h2>
+              <p className="text-gray-400 text-sm mt-2">Choose the style that works best for you</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setMode("wizard")}
+                className="bg-gray-900 hover:bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-2xl p-6 text-left transition-all group"
+              >
+                <div className="text-3xl mb-3">🧙</div>
+                <h3 className="text-white font-semibold mb-1">Wizard</h3>
+                <p className="text-gray-400 text-xs leading-relaxed">
+                  Step-by-step guided questions. Best if you want structure and quick results.
+                </p>
+                <div className="mt-4 text-blue-400 text-xs font-medium group-hover:text-blue-300">
+                  Start wizard →
+                </div>
+              </button>
+
+              <button
+                onClick={() => router.push("/chat")}
+                className="bg-gray-900 hover:bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-2xl p-6 text-left transition-all group"
+              >
+                <div className="text-3xl mb-3">💬</div>
+                <h3 className="text-white font-semibold mb-1">Chat</h3>
+                <p className="text-gray-400 text-xs leading-relaxed">
+                  Free-form conversation. Best if you prefer to describe things naturally.
+                </p>
+                <div className="mt-4 text-blue-400 text-xs font-medium group-hover:text-blue-300">
+                  Open chat →
+                </div>
+              </button>
+            </div>
           </div>
-          <div className="w-full bg-gray-800 rounded-full h-1.5">
-            <div
-              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-              style={{ width: `${(step / totalSteps) * 100}%` }}
-            />
-          </div>
-        </div>
 
-        {/* Step card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 min-h-[220px]">
-          {renderStep()}
-        </div>
+        ) : (
+          /* ── Wizard ── */
+          <>
+            {/* Progress bar */}
+            <div className="mb-6">
+              <div className="flex justify-between text-xs text-gray-500 mb-2">
+                <span>Step {step} of {totalSteps}</span>
+                <span>{Math.round((step / totalSteps) * 100)}%</span>
+              </div>
+              <div className="w-full bg-gray-800 rounded-full h-1.5">
+                <div
+                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${(step / totalSteps) * 100}%` }}
+                />
+              </div>
+            </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center mt-4">
-          <button
-            onClick={() => setStep((s) => s - 1)}
-            disabled={step === 1}
-            className="text-gray-400 hover:text-white text-sm px-3 py-2 disabled:opacity-30 transition"
-          >
-            ← Back
-          </button>
+            {/* Step card */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 min-h-[220px]">
+              {renderStep()}
+            </div>
 
-          {/* Enter hint */}
-          {canNext() && step < totalSteps && (
-            <span className="text-gray-600 text-xs">
-              press Enter ↵
-            </span>
-          )}
+            {/* Navigation */}
+            <div className="flex justify-between items-center mt-4">
+              <button
+                onClick={() => step === 1 ? setMode("pick") : setStep((s) => s - 1)}
+                className="text-gray-400 hover:text-white text-sm px-3 py-2 transition"
+              >
+                ← Back
+              </button>
 
-          {step < totalSteps ? (
-            <button
-              onClick={() => setStep((s) => s + 1)}
-              disabled={!canNext()}
-              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-30 text-white text-sm px-5 py-2 rounded-xl transition"
-            >
-              Next →
-            </button>
-          ) : (
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm px-5 py-2 rounded-xl transition font-medium"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Generating...
-                </span>
-              ) : (
-                "✨ Generate Plan"
+              {canNext() && step < totalSteps && (
+                <span className="text-gray-600 text-xs">press Enter ↵</span>
               )}
-            </button>
-          )}
-        </div>
+
+              {step < totalSteps ? (
+                <button
+                  onClick={() => setStep((s) => s + 1)}
+                  disabled={!canNext()}
+                  className="bg-blue-600 hover:bg-blue-500 disabled:opacity-30 text-white text-sm px-5 py-2 rounded-xl transition"
+                >
+                  Next →
+                </button>
+              ) : (
+                <button
+                  onClick={handleGenerate}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm px-5 py-2 rounded-xl transition font-medium"
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Generating...
+                    </span>
+                  ) : "✨ Generate Plan"}
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
