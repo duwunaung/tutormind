@@ -3,16 +3,12 @@ import { authConfig } from "@/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-export const proxy = auth;
+export const middleware = auth;  // ← must be named "middleware"
 
 export const config = {
   matcher: [
     "/dashboard/:path*",
     "/chat/:path*",
-    "/api/chat/:path*",
-    "/api/lesson-plan/:path*",
-    "/api/sessions/:path*",
-    "/api/export/:path*",
-    "/api/dashboard/:path*",
+    // no /api/* routes
   ],
 };

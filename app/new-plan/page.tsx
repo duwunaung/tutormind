@@ -173,7 +173,7 @@ export default function NewPlanPage() {
     if (loading) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/plan", {
+      const res = await fetch("/api/plan", {  
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: { ...answers, ...resolved }, subject }),
@@ -186,7 +186,6 @@ export default function NewPlanPage() {
       setLoading(false);
     }
   };
-
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">

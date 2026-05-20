@@ -5,14 +5,14 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    console.log("Auth session:", session);
+    
 
     if (!session || !session.user || !session.user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
-    console.log("Request body:", JSON.stringify(body, null, 2));
+    
 
     const { title, messages, subject } = body;
 
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Saving session for userId:", session.user.id);
+    
 
     const saved = await prisma.session.create({
       data: {
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log("Saved session:", saved);
+    
 
     return NextResponse.json({ sessionId: saved.id });
   } catch (error) {
