@@ -83,11 +83,11 @@ export default function ChatPage() {
 
     const endSession = async () => {
         if (messages.length < 2) {
-            console.log("Not enough messages:", messages.length);
+            
             return;
         }
         setEnding(true);
-        console.log("Ending session with messages:", messages);
+        
 
         try {
             const firstUserMsg =
@@ -97,7 +97,7 @@ export default function ChatPage() {
                     ? firstUserMsg.substring(0, 50) + "..."
                     : firstUserMsg;
 
-            console.log("Sending to API:", { title, messages, subject });
+            
 
             const res = await fetch("/api/sessions", {
                 method: "POST",
@@ -105,9 +105,9 @@ export default function ChatPage() {
                 body: JSON.stringify({ title, messages, subject }),
             });
 
-            console.log("API response status:", res.status);
+            
             const data = await res.json();
-            console.log("API response data:", data);
+            
 
             if (!res.ok) {
                 console.error("Failed to save session:", data);

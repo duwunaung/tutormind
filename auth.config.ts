@@ -10,12 +10,7 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!auth?.user;
       const isProtected =
         nextUrl.pathname.startsWith("/dashboard") ||
-        nextUrl.pathname.startsWith("/chat") ||
-        nextUrl.pathname.startsWith("/api/chat") ||
-        nextUrl.pathname.startsWith("/api/lesson-plan") ||
-        nextUrl.pathname.startsWith("/api/sessions") ||
-        nextUrl.pathname.startsWith("/api/export") ||
-        nextUrl.pathname.startsWith("/api/dashboard");
+        nextUrl.pathname.startsWith("/chat");
 
       if (isProtected && !isLoggedIn) {
         return Response.redirect(new URL("/login", nextUrl));
@@ -24,6 +19,7 @@ export const authConfig: NextAuthConfig = {
     },
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
         token.subject = (user as any).subject;
         token.gradeLevel = (user as any).gradeLevel;
       }
@@ -31,6 +27,7 @@ export const authConfig: NextAuthConfig = {
     },
     async session({ session, token }) {
       if (session.user) {
+        (session.user as any).id = token.id;
         (session.user as any).subject = token.subject;
         (session.user as any).gradeLevel = token.gradeLevel;
       }

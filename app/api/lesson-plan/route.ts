@@ -116,7 +116,6 @@ Return ONLY the JSON object. No markdown, no backticks, no code blocks, no extra
         });
 
         const raw = completion.choices[0]?.message?.content || "{}";
-        console.log("Raw AI response:", raw);
 
         // Use jsonrepair to fix any malformed JSON
         const repaired = jsonrepair(raw);
