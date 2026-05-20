@@ -1,0 +1,45 @@
+ GET /api/auth/session 200 in 13ms (next.js: 3ms, application-code: 11ms)
+Admin users error: Error [PrismaClientValidationError]:
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$tutormind$2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].user.findMany()` invocation in
+D:\Projects\Personal\tutormind\.next\dev\server\chunks\[root-of-the-server]__0ho5yht._.js:312:169
+
+  309         status: 403
+  310     });
+  311 }
+→ 312 const users = await __TURBOPACK__imported__module__$5b$project$5d2f$tutormind$2f$lib$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["prisma"].user.findMany({
+        orderBy: {
+          createdAt: "desc"
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          subject: true,
+          gradeLevel: true,
+          role: true,
+          disabled: true,
+          ~~~~~~~~
+          createdAt: true,
+          _count: {
+            select: {
+              sessions: true,
+              lessonPlans: true
+            }
+          },
+      ?   password?: true,
+      ?   sessions?: true,
+      ?   lessonPlans?: true
+        }
+      })
+
+Unknown field `disabled` for select statement on model `User`. Available options are marked with ?.
+    at <unknown> (app\api\admin\users\route.ts:12:37)
+    at async GET (app\api\admin\users\route.ts:12:19)
+  10 |     }
+  11 |
+> 12 |     const users = await prisma.user.findMany({
+     |                                     ^
+  13 |       orderBy: { createdAt: "desc" },
+  14 |       select: {
+  15 |         id: true, {
+  clientVersion: '7.8.0'
