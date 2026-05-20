@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import AppHeader from "@/app/components/AppHeader";
-
 
 type LessonPlan = {
   id: string;
@@ -25,6 +24,8 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -32,7 +33,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-
     const fetchSessions = async () => {
       try {
         const res = await fetch("/api/dashboard");
@@ -44,7 +44,6 @@ export default function DashboardPage() {
         setLoading(false);
       }
     };
-
     fetchSessions();
   }, [status]);
 
@@ -56,13 +55,8 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lessonPlanId, format: "docx" }),
       });
-
       const data = await res.json();
-      if (!res.ok) {
-        alert("Failed to generate file.");
-        return;
-      }
-
+      if (!res.ok) { alert("Failed to generate file."); return; }
       const link = document.createElement("a");
       link.href = data.url;
       link.download = "lesson-plan.docx";
@@ -72,6 +66,24 @@ export default function DashboardPage() {
       alert("Something went wrong.");
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleDelete = async (sessionId: string) => {
+    setDeleting(sessionId);
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) { alert("Failed to delete session."); return; }
+      // Remove from local state — no page reload needed
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      setConfirmingDelete(null);
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("Something went wrong.");
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -93,10 +105,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      {/* Header */}
       <AppHeader />
 
-      {/* Main Content */}
       <div className="max-w-4xl mx-auto px-6 py-8">
 
         {/* Welcome + New Session */}
@@ -115,7 +125,7 @@ export default function DashboardPage() {
             onClick={() => router.push("/new-plan")}
             className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition"
           >
-            + New Session
+            + New Plan
           </button>
         </div>
 
@@ -125,13 +135,13 @@ export default function DashboardPage() {
             <p className="text-4xl mb-4">📚</p>
             <p className="text-white font-medium mb-1">No sessions yet</p>
             <p className="text-gray-400 text-sm mb-6">
-              Start a chat session to plan your first lesson
+              Create a plan to get started
             </p>
             <button
               onClick={() => router.push("/new-plan")}
               className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm transition"
             >
-              + Start New Session
+              + New Plan
             </button>
           </div>
         ) : (
@@ -143,35 +153,29 @@ export default function DashboardPage() {
               >
                 {/* Session Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">
-                    {s.title}
-                  </p>
+                  <p className="text-white text-sm font-medium truncate">{s.title}</p>
                   <div className="flex gap-3 mt-1">
                     <span className="text-gray-500 text-xs">{s.subject}</span>
                     <span className="text-gray-600 text-xs">·</span>
-                    <span className="text-gray-500 text-xs">
-                      {formatDate(s.createdAt)}
-                    </span>
+                    <span className="text-gray-500 text-xs">{formatDate(s.createdAt)}</span>
                     {s.lessonPlan && (
                       <>
                         <span className="text-gray-600 text-xs">·</span>
-                        <span className="text-green-500 text-xs">
-                          ✓ Lesson plan ready
-                        </span>
+                        <span className="text-green-500 text-xs">✓ Plan ready</span>
                       </>
                     )}
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 ml-4 shrink-0">
+                <div className="flex gap-2 ml-4 shrink-0 items-center">
                   {s.lessonPlan && (
                     <>
                       <button
                         onClick={() => router.push(`/lesson-plan/${s.id}`)}
                         className="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-lg transition"
                       >
-                        View Plan
+                        View
                       </button>
                       <button
                         onClick={() => handleDownload(s.lessonPlan!.id)}
@@ -182,10 +186,31 @@ export default function DashboardPage() {
                       </button>
                     </>
                   )}
-                  {!s.lessonPlan && (
-                    <span className="text-gray-600 text-xs px-3 py-1.5">
-                      No plan yet
-                    </span>
+
+                  {/* Delete — inline confirmation */}
+                  {confirmingDelete === s.id ? (
+                    <>
+                      <button
+                        onClick={() => handleDelete(s.id)}
+                        disabled={deleting === s.id}
+                        className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs px-3 py-1.5 rounded-lg transition"
+                      >
+                        {deleting === s.id ? "Deleting..." : "Sure?"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmingDelete(null)}
+                        className="text-gray-400 hover:text-white text-xs px-2 py-1.5 transition"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmingDelete(s.id)}
+                      className="bg-gray-800 hover:bg-red-600 hover:text-white text-gray-400 text-xs px-3 py-1.5 rounded-lg transition"
+                    >
+                      🗑 Delete
+                    </button>
                   )}
                 </div>
               </div>

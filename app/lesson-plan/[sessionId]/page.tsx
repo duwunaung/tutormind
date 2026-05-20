@@ -143,8 +143,17 @@ export default function LessonPlanPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Header */}
-        <AppHeader />
-        {/* Plan Card */}
+        <AppHeader
+          actions={
+            <button
+              onClick={() => handleDownload("docx")}
+              disabled={downloading || !lessonPlanId}
+              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm px-4 py-1.5 rounded-lg transition"
+            >
+              {downloading ? "Generating..." : "⬇ Download DOCX"}
+            </button>
+          }
+        />        {/* Plan Card */}
         <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
 
           {/* Title Block */}

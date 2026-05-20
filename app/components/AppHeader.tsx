@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 type Mode = "wizard" | "chat" | null;
 
@@ -42,21 +42,19 @@ export default function AppHeader({ mode, actions }: AppHeaderProps) {
             <div className="flex bg-gray-800 rounded-lg p-1 text-xs">
               <button
                 onClick={() => router.push("/new-plan")}
-                className={`px-3 py-1.5 rounded-md font-medium transition ${
-                  mode === "wizard"
+                className={`px-3 py-1.5 rounded-md font-medium transition ${mode === "wizard"
                     ? "bg-blue-600 text-white"
                     : "text-gray-400 hover:text-white"
-                }`}
+                  }`}
               >
                 🧙 Wizard
               </button>
               <button
                 onClick={() => router.push("/chat")}
-                className={`px-3 py-1.5 rounded-md font-medium transition ${
-                  mode === "chat"
+                className={`px-3 py-1.5 rounded-md font-medium transition ${mode === "chat"
                     ? "bg-blue-600 text-white"
                     : "text-gray-400 hover:text-white"
-                }`}
+                  }`}
               >
                 💬 Chat
               </button>
@@ -73,7 +71,12 @@ export default function AppHeader({ mode, actions }: AppHeaderProps) {
           >
             Dashboard
           </button>
-
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition"
+          >
+            Sign out
+          </button>
         </div>
       </div>
     </div>
