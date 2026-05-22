@@ -47,6 +47,16 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
+    const hasUppercase = /[A-Z]/.test(form.password);
+    const hasNumber = /[0-9]/.test(form.password);
+    const hasSpecialChar = /[^A-Za-z0-9]/.test(form.password);
+
+    if (form.password.length < 8 || !hasUppercase || !hasNumber || !hasSpecialChar) {
+      setError("Password does not meet complexity requirements.");
+      setLoading(false);
+      return;
+    }
+
     const res = await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -109,8 +119,28 @@ export default function RegisterPage() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Min 8 characters"
+              placeholder="Enter strong password"
             />
+            {form.password && (
+              <div className="mt-2 space-y-1 text-[11px] bg-gray-950/40 p-2.5 rounded-lg border border-gray-800/60">
+                <div className={`flex items-center gap-1.5 transition-colors duration-200 ${form.password.length >= 8 ? "text-green-400" : "text-gray-500"}`}>
+                  <span>{form.password.length >= 8 ? "✓" : "○"}</span>
+                  <span>At least 8 characters</span>
+                </div>
+                <div className={`flex items-center gap-1.5 transition-colors duration-200 ${/[A-Z]/.test(form.password) ? "text-green-400" : "text-gray-500"}`}>
+                  <span>{/[A-Z]/.test(form.password) ? "✓" : "○"}</span>
+                  <span>At least one uppercase letter</span>
+                </div>
+                <div className={`flex items-center gap-1.5 transition-colors duration-200 ${/[0-9]/.test(form.password) ? "text-green-400" : "text-gray-500"}`}>
+                  <span>{/[0-9]/.test(form.password) ? "✓" : "○"}</span>
+                  <span>At least one number</span>
+                </div>
+                <div className={`flex items-center gap-1.5 transition-colors duration-200 ${/[^A-Za-z0-9]/.test(form.password) ? "text-green-400" : "text-gray-500"}`}>
+                  <span>{/[^A-Za-z0-9]/.test(form.password) ? "✓" : "○"}</span>
+                  <span>At least one special character</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

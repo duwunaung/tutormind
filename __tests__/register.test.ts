@@ -51,7 +51,7 @@ describe('Register API Route', () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(400);
-    expect(data.error).toBe('Password must be at least 8 characters long');
+    expect(data.error).toBe('Password must be at least 8 characters long and contain at least one uppercase letter, one number, and one special character');
   });
 
   it('should return 400 if email is already registered', async () => {
@@ -62,7 +62,7 @@ describe('Register API Route', () => {
       body: JSON.stringify({
         name: 'Test',
         email: 'test@test.com',
-        password: 'password123',
+        password: 'SecurePass123!',
         subject: 'Math',
         gradeLevel: 'Grade 5',
       }),
@@ -84,7 +84,7 @@ describe('Register API Route', () => {
       body: JSON.stringify({
         name: 'Test',
         email: 'test@test.com',
-        password: 'password123',
+        password: 'SecurePass123!',
         subject: 'Math',
         gradeLevel: 'Grade 5',
       }),
@@ -115,7 +115,7 @@ describe('Register API Route', () => {
       body: JSON.stringify({
         name: 'Test',
         email: 'test@test.com',
-        password: 'password123',
+        password: 'SecurePass123!',
         subject: 'Math',
         gradeLevel: 'Grade 5',
       }),
