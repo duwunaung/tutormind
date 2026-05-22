@@ -30,28 +30,61 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
 
+  // Stats loading on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchStats = async () => {
       try {
-        const [statsRes, usersRes] = await Promise.all([
-          fetch("/api/admin/stats"),
-          fetch("/api/admin/users"),
-        ]);
-        const statsData = await statsRes.json();
-        const usersData = await usersRes.json();
+        const res = await fetch("/api/admin/stats");
+        const statsData = await res.json();
         setStats(statsData);
-        setUsers(usersData.users || []);
       } catch (err) {
-        console.error("Failed to load admin data:", err);
+        console.error("Failed to load admin stats:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+    fetchStats();
   }, []);
+
+  // Search debouncing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1); // Reset to first page on search change
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Users loading on page or search change
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setUsersLoading(true);
+      try {
+        const res = await fetch(
+          `/api/admin/users?page=${page}&limit=10&search=${encodeURIComponent(
+            debouncedSearch
+          )}`
+        );
+        const data = await res.json();
+        setUsers(data.users || []);
+        setTotalPages(data.totalPages || 1);
+        setTotalUsers(data.total || 0);
+      } catch (err) {
+        console.error("Failed to load admin users:", err);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [page, debouncedSearch]);
 
   const handleToggle = async (userId: string, disabled: boolean) => {
     setTogglingId(userId);
@@ -82,12 +115,7 @@ export default function AdminPage() {
       day: "numeric",
     });
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      u.subject.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsers = users;
 
   if (loading) {
     return (
@@ -150,7 +178,7 @@ export default function AdminPage() {
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
             <h2 className="text-white font-semibold text-sm">
-              Users ({filteredUsers.length})
+              Users ({totalUsers})
             </h2>
             <input
               type="text"
@@ -223,6 +251,40 @@ export default function AdminPage() {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Pagination controls */}
+          <div className="px-6 py-4 border-t border-gray-800 flex items-center justify-between text-sm text-gray-400 bg-gray-900/50">
+            <div>
+              {usersLoading ? (
+                <span>Loading users...</span>
+              ) : (
+                <span>
+                  Showing <span className="text-white font-medium">{filteredUsers.length}</span> of{" "}
+                  <span className="text-white font-medium">{totalUsers}</span> users
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                disabled={page === 1 || usersLoading}
+                className="px-3 py-1.5 rounded bg-gray-800 border border-gray-700 text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Previous
+              </button>
+              <span>
+                Page <span className="text-white font-medium">{page}</span> of{" "}
+                <span className="text-white font-medium">{totalPages}</span>
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                disabled={page === totalPages || usersLoading}
+                className="px-3 py-1.5 rounded bg-gray-800 border border-gray-700 text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </div>

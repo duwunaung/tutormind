@@ -88,7 +88,7 @@ export default async function HomePage() {
 
       {/* Footer */}
       <div className="border-t border-gray-800 px-6 py-4 text-center">
-        <p className="text-gray-600 text-xs">© 2026 TutorMind. Built for independent tutors.</p>
+        <p className="text-gray-600 text-xs">© {new Date().getFullYear()} TutorMind. Built for independent tutors.</p>
       </div>
     </div>
   );
