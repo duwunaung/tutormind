@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const SUBJECTS = ["Math", "Science", "English / Language Arts", "History", "Software Engineering"];
+const DEFAULT_SUBJECTS = ["Math", "Science", "English / Language Arts", "History", "Software Engineering"];
 const GRADE_LEVELS = [
   "Elementary (K-5)",
   "Middle School (6-8)",
@@ -14,6 +14,7 @@ const GRADE_LEVELS = [
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [subjectsList, setSubjectsList] = useState<string[]>(DEFAULT_SUBJECTS);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -23,6 +24,23 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const res = await fetch("/api/subjects");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.subjects) && data.subjects.length > 0) {
+            setSubjectsList(data.subjects);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch subjects from DB, using fallback list:", err);
+      }
+    };
+    fetchSubjects();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +122,7 @@ export default function RegisterPage() {
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="" className="text-gray-500">Select a subject</option>
-              {SUBJECTS.map((s) => (
+              {subjectsList.map((s) => (
                 <option key={s} value={s} className="text-white">{s}</option>
               ))}
             </select>

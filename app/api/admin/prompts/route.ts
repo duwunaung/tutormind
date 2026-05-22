@@ -45,3 +45,50 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to load templates" }, { status: 500 });
   }
 }
+
+export async function POST(req: Request) {
+  try {
+    const { errorResponse } = await verifyAdmin();
+    if (errorResponse) return errorResponse;
+
+    const { subject, template, temperature = 0.7 } = await req.json();
+
+    if (!subject || typeof subject !== "string" || !subject.trim()) {
+      return NextResponse.json({ error: "Subject name is required" }, { status: 400 });
+    }
+
+    if (!template || typeof template !== "string" || !template.trim()) {
+      return NextResponse.json({ error: "Prompt template instructions are required" }, { status: 400 });
+    }
+
+    const tempVal = parseFloat(temperature);
+    if (isNaN(tempVal) || tempVal < 0.0 || tempVal > 1.5) {
+      return NextResponse.json({ error: "Temperature must be a number between 0.0 and 1.5" }, { status: 400 });
+    }
+
+    const trimmedSubject = subject.trim();
+
+    // Check duplicate
+    const existing = await prisma.promptTemplate.findUnique({
+      where: { subject: trimmedSubject },
+    });
+
+    if (existing) {
+      return NextResponse.json({ error: `Subject "${trimmedSubject}" already exists.` }, { status: 400 });
+    }
+
+    const newTemplate = await prisma.promptTemplate.create({
+      data: {
+        subject: trimmedSubject,
+        template: template.trim(),
+        temperature: tempVal,
+      },
+    });
+
+    return NextResponse.json({ template: newTemplate }, { status: 201 });
+  } catch (error) {
+    console.error("Create prompt template error:", error);
+    return NextResponse.json({ error: "Failed to create subject template" }, { status: 500 });
+  }
+}
+
