@@ -1,6 +1,6 @@
 import { groq } from "@/lib/ai";
 import { verifyUser } from "@/lib/auth-util";
-import { getSystemPrompt } from "@/lib/prompts";
+import { getPromptConfig } from "@/lib/prompts";
 import { NextResponse } from "next/server";
 
 interface ChatMessage {
@@ -23,8 +23,10 @@ export async function POST(req: Request) {
       return true;
     });
 
+    const { systemPrompt, temperature } = await getPromptConfig(subject);
+
     const groqMessages = [
-      { role: "system" as const, content: getSystemPrompt(subject) },
+      { role: "system" as const, content: systemPrompt },
       ...filtered.map((m) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
@@ -35,6 +37,7 @@ export async function POST(req: Request) {
       model: "llama-3.3-70b-versatile",
       messages: groqMessages,
       max_tokens: 1024,
+      temperature,
     });
 
     const raw = completion.choices[0]?.message?.content || "";
