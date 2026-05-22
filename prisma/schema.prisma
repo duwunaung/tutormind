@@ -16,6 +16,8 @@ model User {
   createdAt     DateTime      @default(now())
   sessions      Session[]
   lessonPlans   LessonPlan[]
+  role          String        @default("user")
+  disabled      Boolean       @default(false)
 }
 
 model Session {

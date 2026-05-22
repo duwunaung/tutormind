@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import AppHeader from "@/app/components/AppHeader";
+
 
 type Message = {
     role: "user" | "assistant";
@@ -19,12 +21,17 @@ export default function ChatPage() {
     const [ending, setEnding] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
 
-    const subject = (session?.user as any)?.subject || "General";
-    const gradeLevel = (session?.user as any)?.gradeLevel || "";
+    const user = session?.user as { subject?: string; gradeLevel?: string } | undefined;
+    const subject = user?.subject || "General";
+    const gradeLevel = user?.gradeLevel || "";
 
     useEffect(() => {
-        if (status === "unauthenticated") router.push("/login");
-    }, [status]);
+        if (status === "unauthenticated") {
+            router.push("/login");
+        } else if (status === "authenticated" && session?.user?.role === "admin") {
+            router.push("/admin");
+        }
+    }, [status, session, router]);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,14 +40,16 @@ export default function ChatPage() {
     // Welcome message on load
     useEffect(() => {
         if (status === "authenticated" && messages.length === 0) {
-            setMessages([
-                {
-                    role: "assistant",
-                    content: `Hi ${session?.user?.name}! 👋 I'm your ${subject} teaching assistant. Tell me what topic or lesson you'd like to plan today, and I'll help you build something great for your ${gradeLevel} students!`,
-                },
-            ]);
+            setTimeout(() => {
+                setMessages([
+                    {
+                        role: "assistant",
+                        content: `Hi ${session?.user?.name}! 👋 I'm your ${subject} teaching assistant. Tell me what topic or lesson you'd like to plan today, and I'll help you build something great for your ${gradeLevel} students!`,
+                    },
+                ]);
+            }, 0);
         }
-    }, [status]);
+    }, [status, messages.length, session?.user?.name, subject, gradeLevel]);
 
     const sendMessage = async () => {
         if (!input.trim() || loading) return;
@@ -70,7 +79,7 @@ export default function ChatPage() {
                     ready: data.ready || false,
                 },
             ]);
-        } catch (error) {
+        } catch {
             setMessages([
                 ...updatedMessages,
                 {
@@ -134,32 +143,8 @@ export default function ChatPage() {
     return (
         <div className="min-h-screen bg-gray-950 flex flex-col">
             {/* Header */}
-            <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-10">                <div>
-                <h1 className="text-white font-semibold">TutorMind</h1>
-                <p className="text-gray-400 text-xs">
-                    {subject} · {gradeLevel}
-                </p>
-            </div>
-                <div className="flex gap-2 items-center">
-                    <div className="flex bg-gray-800 rounded-lg p-1 text-xs">
-                        <button
-                            onClick={() => router.push("/new-plan")}
-                            className="px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium"
-                        >
-                            🧙 Wizard
-                        </button>
-                        <button className="px-3 py-1.5 rounded-md bg-blue-600 text-white font-medium">
-                            💬 Chat
-                        </button>
-                    </div>
-                    <button
-                        onClick={() => router.push("/dashboard")}
-                        className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition"
-                    >
-                        Dashboard
-                    </button>
-                </div>
-            </div>
+            <AppHeader mode="chat" />
+
 
             {/* Messages */}
             < div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-3xl mx-auto w-full" >
@@ -170,8 +155,8 @@ export default function ChatPage() {
                     >
                         <div
                             className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${msg.role === "user"
-                                    ? "bg-blue-600 text-white rounded-br-sm"
-                                    : "bg-gray-800 text-gray-100 rounded-bl-sm"
+                                ? "bg-blue-600 text-white rounded-br-sm"
+                                : "bg-gray-800 text-gray-100 rounded-bl-sm"
                                 }`}
                         >
                             {msg.content.split("\n").map((line, j) => (

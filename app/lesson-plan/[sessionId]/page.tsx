@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import AppHeader from "@/app/components/AppHeader";
 
 type Section = {
   sectionNumber: number;
@@ -142,31 +143,17 @@ export default function LessonPlanPage() {
       <div className="max-w-3xl mx-auto">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition"
-          >
-            ← Dashboard
-          </button>
-          <div className="flex gap-2">
-            <button
-              onClick={() => router.push("/new-plan")}
-              className="bg-gray-800 hover:bg-gray-700 text-white text-sm px-4 py-2 rounded-lg transition"
-            >
-              + New Session
-            </button>
+        <AppHeader
+          actions={
             <button
               onClick={() => handleDownload("docx")}
               disabled={downloading || !lessonPlanId}
-              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm px-4 py-2 rounded-lg transition"
+              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm px-4 py-1.5 rounded-lg transition"
             >
               {downloading ? "Generating..." : "⬇ Download DOCX"}
             </button>
-          </div>
-        </div>
-
-        {/* Plan Card */}
+          }
+        />        {/* Plan Card */}
         <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
 
           {/* Title Block */}

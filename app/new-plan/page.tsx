@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import AppHeader from "@/app/components/AppHeader";
 
 type PlanType = "course" | "lesson";
 type Mode = "pick" | "wizard";
@@ -101,7 +102,8 @@ function StepWrapper({
 export default function NewPlanPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const subject = (session?.user as any)?.subject ?? "your subject";
+  const user = session?.user as { subject?: string } | undefined;
+  const subject = user?.subject ?? "your subject";
 
   const [mode, setMode] = useState<Mode>("pick");
   const [step, setStep] = useState(1);
@@ -128,13 +130,13 @@ export default function NewPlanPage() {
 
   const totalSteps = answers.planType === "course" ? 8 : 7;
 
-  const resolved = {
+  const resolved = useMemo(() => ({
     courseDuration: answers.courseDuration === "other" ? answers.courseDurationCustom : answers.courseDuration,
     sessionsPerWeek: answers.sessionsPerWeek === "other" ? answers.sessionsPerWeekCustom : answers.sessionsPerWeek,
     sessionLength: answers.sessionLength === "other" ? answers.sessionLengthCustom : answers.sessionLength,
-  };
+  }), [answers.courseDuration, answers.courseDurationCustom, answers.sessionsPerWeek, answers.sessionsPerWeekCustom, answers.sessionLength, answers.sessionLengthCustom]);
 
-  const canNext = (): boolean => {
+  const canNext = useCallback((): boolean => {
     if (step === 1) return !!answers.planType;
     if (answers.planType === "course") {
       if (step === 2) return !!resolved.courseDuration.trim();
@@ -154,7 +156,33 @@ export default function NewPlanPage() {
       if (step === 7) return true;
     }
     return true;
-  };
+  }, [step, answers, resolved]);
+
+  const handleGenerate = useCallback(async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers: { ...answers, ...resolved }, subject }),
+      });
+      const data = await res.json();
+      if (data.sessionId) router.push(`/lesson-plan/${data.sessionId}`);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, answers, resolved, subject, router]);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated" && session?.user?.role === "admin") {
+      router.push("/admin");
+    }
+  }, [status, session, router]);
 
   useEffect(() => {
     if (mode !== "wizard") return; // don't intercept on pick screen
@@ -167,25 +195,7 @@ export default function NewPlanPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [step, answers, totalSteps, mode]);
-
-  const handleGenerate = async () => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      const res = await fetch("/api/plan", {  
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: { ...answers, ...resolved }, subject }),
-      });
-      const data = await res.json();
-      if (data.sessionId) router.push(`/lesson-plan/${data.sessionId}`);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [step, totalSteps, mode, canNext, handleGenerate]);
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -299,33 +309,8 @@ export default function NewPlanPage() {
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
-          <h1 className="text-white font-bold text-lg">TutorMind</h1>
-          <div className="flex items-center gap-2">
-            {/* Mode toggle — only visible once in wizard */}
-            {mode === "wizard" && (
-              <div className="flex bg-gray-800 rounded-lg p-1 text-xs">
-                <button className="px-3 py-1.5 rounded-md bg-blue-600 text-white font-medium">
-                  🧙 Wizard
-                </button>
-                <button
-                  onClick={() => router.push("/chat")}
-                  className="px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition font-medium"
-                >
-                  💬 Chat
-                </button>
-              </div>
-            )}
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition"
-            >
-              ← Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
+      <AppHeader mode="wizard" />
+
 
       <div className="max-w-lg mx-auto px-6 mt-12">
         {mode === "pick" ? (

@@ -3,12 +3,15 @@ import { authConfig } from "@/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-export const middleware = auth;  // ← must be named "middleware"
+export const middleware = auth;
 
 export const config = {
   matcher: [
     "/dashboard/:path*",
     "/chat/:path*",
-    // no /api/* routes
+    "/new-plan/:path*",
+    "/lesson-plan/:path*",
+    "/admin/:path*",
+    "/suspended",    
   ],
 };

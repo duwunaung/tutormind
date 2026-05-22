@@ -21,7 +21,7 @@ type Section = {
   assessment: string;
 };
 
-type LessonPlan = {
+export type LessonPlan = {
   type: "lesson" | "course";
   title: string;
   subject: string;
@@ -46,7 +46,7 @@ type LessonPlan = {
 };
 
 export async function generateDocx(plan: LessonPlan): Promise<Buffer> {
-  const children: Paragraph[] = [];
+  const children: (Paragraph | Table)[] = [];
 
   // ── Title ──
   children.push(
@@ -165,7 +165,7 @@ export async function generateDocx(plan: LessonPlan): Promise<Buffer> {
             ],
           }),
         ],
-      }) as any
+      })
     );
   }
 

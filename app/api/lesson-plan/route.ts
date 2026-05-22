@@ -1,5 +1,5 @@
 import { groq } from "@/lib/ai";
-import { auth } from "@/auth";
+import { verifyUser } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { jsonrepair } from "jsonrepair";
@@ -7,10 +7,9 @@ import { jsonrepair } from "jsonrepair";
 
 export async function POST(req: Request) {
     try {
-        const session = await auth();
-        if (!session || !session.user || !session.user.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const authResult = await verifyUser();
+        if (authResult.errorResponse) return authResult.errorResponse;
+        const { session } = authResult;
 
         const { sessionId } = await req.json();
 
@@ -20,6 +19,9 @@ export async function POST(req: Request) {
         });
 
         if (existing) {
+            if (existing.userId !== session.user.id) {
+                return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            }
             return NextResponse.json({ lessonPlan: existing });
         }
 
@@ -32,8 +34,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
 
+        if (chatSession.userId !== session.user.id) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         // Build chat summary for Groq
-        const messages = chatSession.messages as any[];
+        const messages = chatSession.messages as { role: string; content: string }[];
         const chatHistory = messages
             .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
             .join("\n\n");

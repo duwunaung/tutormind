@@ -7,29 +7,58 @@ export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
+      const user = auth?.user as { role?: string; disabled?: boolean } | undefined;
+      const isLoggedIn = !!user;
+      const isAdmin = user?.role === "admin";
+      const isDisabled = user?.disabled === true;
+
+      // Redirect disabled users
+      if (isLoggedIn && isDisabled && nextUrl.pathname !== "/suspended") {
+        return Response.redirect(new URL("/suspended", nextUrl));
+      }
+
+      // Protect admin routes
+      if (nextUrl.pathname.startsWith("/admin")) {
+        if (!isLoggedIn) return Response.redirect(new URL("/login", nextUrl));
+        if (!isAdmin) return Response.redirect(new URL("/dashboard", nextUrl));
+        return true;
+      }
+
+      // Protect app routes
       const isProtected =
         nextUrl.pathname.startsWith("/dashboard") ||
-        nextUrl.pathname.startsWith("/chat");
+        nextUrl.pathname.startsWith("/chat") ||
+        nextUrl.pathname.startsWith("/new-plan") ||
+        nextUrl.pathname.startsWith("/lesson-plan");
 
-      if (isProtected && !isLoggedIn) {
-        return Response.redirect(new URL("/login", nextUrl));
+      if (isProtected) {
+        if (!isLoggedIn) return Response.redirect(new URL("/login", nextUrl));
+        if (isAdmin) return Response.redirect(new URL("/admin", nextUrl));
       }
+
       return true;
     },
+
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.subject = (user as any).subject;
-        token.gradeLevel = (user as any).gradeLevel;
+        const u = user as { id?: string; subject?: string; gradeLevel?: string; role?: string; disabled?: boolean };
+        token.id = u.id;
+        token.subject = u.subject;
+        token.gradeLevel = u.gradeLevel;
+        token.role = u.role;
+        token.disabled = u.disabled;
       }
       return token;
     },
+
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).subject = token.subject;
-        (session.user as any).gradeLevel = token.gradeLevel;
+        const u = session.user as { id?: string; subject?: string; gradeLevel?: string; role?: string; disabled?: boolean };
+        u.id = token.id as string;
+        u.subject = token.subject as string;
+        u.gradeLevel = token.gradeLevel as string;
+        u.role = token.role as string;
+        u.disabled = token.disabled as boolean;
       }
       return session;
     },

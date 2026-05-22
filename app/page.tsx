@@ -4,7 +4,13 @@ import { redirect } from "next/navigation";
 
 export default async function HomePage() {
   const session = await auth();
-  if (session) redirect("/dashboard");
+  if (session) {
+    if (session.user?.role === "admin") {
+      redirect("/admin");
+    } else {
+      redirect("/dashboard");
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -29,7 +29,12 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    const session = await getSession();
+    if (session?.user?.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   return (
@@ -79,7 +84,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/register" className="text-blue-400 hover:text-blue-300">Register</Link>
         </p>
       </div>

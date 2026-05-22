@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { verifyUser } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    
-
-    if (!session || !session.user || !session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await verifyUser();
+    if (authResult.errorResponse) return authResult.errorResponse;
+    const { session } = authResult;
 
     const body = await req.json();
     
@@ -40,7 +37,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Session save error:", error);
     return NextResponse.json(
-      { error: "Something went wrong", details: String(error) },
+      { error: "Something went wrong. Please try again later." },
       { status: 500 }
     );
   }
