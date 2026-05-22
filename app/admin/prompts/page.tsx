@@ -152,20 +152,21 @@ export default function PromptsAdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col">
+      <div className="min-h-screen bg-gray-950 flex flex-col lg:flex-row text-white">
         <AdminHeader />
-        <div className="flex-1 flex items-center justify-center">
+        <main className="flex-1 lg:pl-64 w-full flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col text-white">
+    <div className="min-h-screen bg-gray-950 flex flex-col lg:flex-row text-white">
       <AdminHeader />
 
-      <div className="max-w-6xl w-full mx-auto px-6 py-8 flex-1 flex flex-col md:flex-row gap-6">
+      <main className="flex-1 lg:pl-64 w-full">
+        <div className="max-w-6xl w-full mx-auto px-6 py-8 flex-1 flex flex-col md:flex-row gap-6">
         {/* Left pane: Subjects List */}
         <div className="w-full md:w-64 bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col gap-2 h-fit shrink-0">
           <h2 className="text-sm font-semibold text-gray-400 mb-2 px-2">Subjects</h2>
@@ -399,8 +400,9 @@ export default function PromptsAdminPage() {
           )}
         </div>
       </div>
-    </div>
-  );
+    </main>
+  </div>
+);
 }
 
 

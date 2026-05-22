@@ -75,32 +75,39 @@ export default function AdminUserPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-gray-950 flex flex-col lg:flex-row text-white">
+        <AdminHeader />
+        <main className="flex-1 lg:pl-64 w-full flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        </main>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <p className="text-gray-400">User not found.</p>
+      <div className="min-h-screen bg-gray-950 flex flex-col lg:flex-row text-white">
+        <AdminHeader />
+        <main className="flex-1 lg:pl-64 w-full flex items-center justify-center">
+          <p className="text-gray-400">User not found.</p>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-950 flex flex-col lg:flex-row text-white">
       <AdminHeader />
 
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+      <main className="flex-1 lg:pl-64 w-full">
+        <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
 
         {/* Back */}
         <button
-          onClick={() => router.push("/admin")}
+          onClick={() => router.push("/admin/users")}
           className="text-gray-400 hover:text-white text-sm transition"
         >
-          ← Back to Admin
+          ← Back to Users
         </button>
 
         {/* User card */}
@@ -194,8 +201,8 @@ export default function AdminUserPage() {
             </div>
           )}
         </div>
-
       </div>
-    </div>
-  );
+    </main>
+  </div>
+);
 }
