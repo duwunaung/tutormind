@@ -35,7 +35,7 @@ export default function PromptsAdminPage() {
       try {
         const res = await fetch("/api/admin/prompts");
         const data = await res.json();
-        if (data.templates) {
+        if (res.ok && data.templates) {
           setTemplates(data.templates);
           if (data.templates.length > 0) {
             const firstTpl = data.templates[0];
@@ -43,6 +43,8 @@ export default function PromptsAdminPage() {
             setEditText(firstTpl.template);
             setEditTemperature(firstTpl.temperature);
           }
+        } else {
+          setMessage({ text: data.error || "Failed to load templates from database.", type: "error" });
         }
       } catch (err) {
         console.error("Failed to load templates:", err);
@@ -218,4 +220,5 @@ export default function PromptsAdminPage() {
     </div>
   );
 }
+
 
