@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function GET(
   req: Request,
@@ -22,6 +23,7 @@ export async function GET(
         gradeLevel: true,
         role: true,
         disabled: true,
+        subscriptionExpiresAt: true,
         createdAt: true,
         sessions: {
           orderBy: { createdAt: "desc" },
@@ -65,19 +67,35 @@ export async function PATCH(
     if (errorResponse) return errorResponse;
 
     const { id } = await params;
-    const { disabled } = await req.json();
+    const body = await req.json();
+    const { disabled, role, subscriptionExpiresAt } = body;
 
     // Prevent admin from disabling themselves
-    if (id === session?.user?.id) {
+    if (id === session?.user?.id && disabled === true) {
       return NextResponse.json(
         { error: "Cannot disable your own account" },
         { status: 400 }
       );
     }
 
+    // Prevent admin from demoting themselves
+    if (id === session?.user?.id && role !== undefined && role !== "admin") {
+      return NextResponse.json(
+        { error: "Cannot demote your own admin account" },
+        { status: 400 }
+      );
+    }
+
+    const updateData: Prisma.UserUpdateInput = {};
+    if (disabled !== undefined) updateData.disabled = disabled;
+    if (role !== undefined) updateData.role = role;
+    if (subscriptionExpiresAt !== undefined) {
+      updateData.subscriptionExpiresAt = subscriptionExpiresAt ? new Date(subscriptionExpiresAt) : null;
+    }
+
     const user = await prisma.user.update({
       where: { id },
-      data: { disabled },
+      data: updateData,
     });
 
     return NextResponse.json({ user });

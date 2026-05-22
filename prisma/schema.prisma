@@ -17,7 +17,8 @@ model User {
   sessions      Session[]
   lessonPlans   LessonPlan[]
   role          String        @default("user")
-  disabled      Boolean       @default(false)
+  disabled              Boolean       @default(false)
+  subscriptionExpiresAt DateTime?
 }
 
 model Session {

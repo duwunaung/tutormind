@@ -39,6 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           gradeLevel: user.gradeLevel,          
           role: user.role,          
           disabled: user.disabled,
+          subscriptionExpiresAt: user.subscriptionExpiresAt,
         };
       },
     }),

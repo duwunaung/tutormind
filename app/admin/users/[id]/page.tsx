@@ -21,6 +21,7 @@ type User = {
   gradeLevel: string;
   role: string;
   disabled: boolean;
+  subscriptionExpiresAt: string | null;
   createdAt: string;
   sessions: Session[];
   _count: { sessions: number; lessonPlans: number };
@@ -32,6 +33,8 @@ export default function AdminUserPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
+  const [updatingSubscription, setUpdatingSubscription] = useState(false);
+  const [customDate, setCustomDate] = useState("");
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -39,6 +42,9 @@ export default function AdminUserPage() {
         const res = await fetch(`/api/admin/users/${id}`);
         const data = await res.json();
         setUser(data.user);
+        if (data.user?.subscriptionExpiresAt) {
+          setCustomDate(new Date(data.user.subscriptionExpiresAt).toISOString().split("T")[0]);
+        }
       } catch (err) {
         console.error("Failed to load user:", err);
       } finally {
@@ -63,6 +69,90 @@ export default function AdminUserPage() {
       console.error("Toggle error:", err);
     } finally {
       setToggling(false);
+    }
+  };
+
+  const updateSubscription = async (newDate: Date | null) => {
+    if (!user) return;
+    setUpdatingSubscription(true);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subscriptionExpiresAt: newDate ? newDate.toISOString() : null,
+        }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert(errorData.error || "Failed to update subscription.");
+        return;
+      }
+      const data = await res.json();
+      setUser((prev) => prev ? { ...prev, subscriptionExpiresAt: data.user.subscriptionExpiresAt } : prev);
+      
+      if (data.user.subscriptionExpiresAt) {
+        setCustomDate(new Date(data.user.subscriptionExpiresAt).toISOString().split("T")[0]);
+      } else {
+        setCustomDate("");
+      }
+    } catch (err) {
+      console.error("Subscription update error:", err);
+    } finally {
+      setUpdatingSubscription(false);
+    }
+  };
+
+  const handleExtend = (increment: "1m" | "3m" | "1y") => {
+    if (!user) return;
+    const baseDate = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) > new Date()
+      ? new Date(user.subscriptionExpiresAt)
+      : new Date();
+
+    const newDate = new Date(baseDate);
+    if (increment === "1m") {
+      newDate.setMonth(newDate.getMonth() + 1);
+    } else if (increment === "3m") {
+      newDate.setMonth(newDate.getMonth() + 3);
+    } else if (increment === "1y") {
+      newDate.setFullYear(newDate.getFullYear() + 1);
+    }
+    updateSubscription(newDate);
+  };
+
+  const handleCustomDateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customDate) return;
+    const targetDate = new Date(customDate);
+    targetDate.setHours(23, 59, 59, 999);
+    updateSubscription(targetDate);
+  };
+
+  const handleRevoke = () => {
+    if (confirm("Are you sure you want to revoke subscription access?")) {
+      updateSubscription(null);
+    }
+  };
+
+  const handleRoleChange = async (newRole: "user" | "admin") => {
+    if (!user) return;
+    if (confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+      try {
+        const res = await fetch(`/api/admin/users/${user.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: newRole }),
+        });
+        if (!res.ok) {
+          const errorData = await res.json();
+          alert(errorData.error || "Failed to update role.");
+          return;
+        }
+        const data = await res.json();
+        setUser((prev) => prev ? { ...prev, role: data.user.role } : prev);
+      } catch (err) {
+        console.error("Role update error:", err);
+      }
     }
   };
 
@@ -112,22 +202,25 @@ export default function AdminUserPage() {
 
         {/* User card */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl px-6 py-5">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between flex-wrap gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <h2 className="text-white text-lg font-bold">{user.name}</h2>
-                {user.role === "admin" && (
-                  <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
-                    Admin
-                  </span>
-                )}
+                <select
+                  value={user.role}
+                  onChange={(e) => handleRoleChange(e.target.value as "user" | "admin")}
+                  className="bg-gray-800 border border-gray-700 text-white text-xs px-2 py-0.5 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin Staff</option>
+                </select>
                 {user.disabled ? (
                   <span className="bg-red-600/20 text-red-400 text-xs px-2 py-0.5 rounded-full border border-red-600/30">
-                    Disabled
+                    Suspended
                   </span>
                 ) : (
                   <span className="bg-green-600/20 text-green-400 text-xs px-2 py-0.5 rounded-full border border-green-600/30">
-                    Active
+                    Active Profile
                   </span>
                 )}
               </div>
@@ -149,17 +242,112 @@ export default function AdminUserPage() {
               <button
                 onClick={handleToggle}
                 disabled={toggling}
-                className={`text-sm px-4 py-2 rounded-lg transition ${
+                className={`text-xs font-semibold px-4 py-2 rounded-xl transition ${
                   user.disabled
                     ? "bg-green-600 hover:bg-green-500 text-white"
                     : "bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-600/30"
                 }`}
               >
-                {toggling ? "..." : user.disabled ? "Enable Account" : "Disable Account"}
+                {toggling ? "..." : user.disabled ? "Activate Profile" : "Suspend Profile"}
               </button>
             )}
           </div>
         </div>
+
+        {/* Subscription Panel */}
+        {user.role !== "admin" && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl px-6 py-5">
+            <h3 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
+              ⏳ Subscription Management
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: Current Status and Quick Actions */}
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">Current Subscription Status</div>
+                  <div className="flex items-center gap-2">
+                    {user.subscriptionExpiresAt ? (
+                      new Date() > new Date(user.subscriptionExpiresAt) ? (
+                        <span className="bg-red-500/10 text-red-400 text-xs px-2.5 py-1 rounded-full border border-red-500/20 font-medium">
+                          Expired on {formatDate(user.subscriptionExpiresAt)}
+                        </span>
+                      ) : (
+                        <span className="bg-green-500/10 text-green-400 text-xs px-2.5 py-1 rounded-full border border-green-500/20 font-medium">
+                          Active until {formatDate(user.subscriptionExpiresAt)}
+                        </span>
+                      )
+                    ) : (
+                      <span className="bg-gray-800 text-gray-400 text-xs px-2.5 py-1 rounded-full border border-gray-700 font-medium">
+                        No Active Subscription
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-gray-500 mb-2">Extend Subscription (Quick Add)</div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleExtend("1m")}
+                      disabled={updatingSubscription}
+                      className="bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition disabled:opacity-50"
+                    >
+                      +1 Month
+                    </button>
+                    <button
+                      onClick={() => handleExtend("3m")}
+                      disabled={updatingSubscription}
+                      className="bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition disabled:opacity-50"
+                    >
+                      +3 Months
+                    </button>
+                    <button
+                      onClick={() => handleExtend("1y")}
+                      disabled={updatingSubscription}
+                      className="bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition disabled:opacity-50"
+                    >
+                      +1 Year
+                    </button>
+                    {user.subscriptionExpiresAt && (
+                      <button
+                        onClick={handleRevoke}
+                        disabled={updatingSubscription}
+                        className="bg-red-950/30 hover:bg-red-900/40 text-red-400 text-xs font-semibold px-3 py-2 rounded-lg border border-red-900/30 transition disabled:opacity-50"
+                      >
+                        Revoke Access
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Custom Date Picker */}
+              <form onSubmit={handleCustomDateSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-2">Set Custom Expiration Date</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      required
+                      value={customDate}
+                      onChange={(e) => setCustomDate(e.target.value)}
+                      disabled={updatingSubscription}
+                      className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-1"
+                    />
+                    <button
+                      type="submit"
+                      disabled={updatingSubscription || !customDate}
+                      className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50"
+                    >
+                      {updatingSubscription ? "Updating..." : "Save Date"}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Sessions list */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">

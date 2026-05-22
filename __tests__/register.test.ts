@@ -102,6 +102,7 @@ describe('Register API Route', () => {
         password: 'hashed_password',
         subject: 'Math',
         gradeLevel: 'Grade 5',
+        subscriptionExpiresAt: expect.any(Date),
       },
     });
   });
