@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { verifyAdmin } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
@@ -7,10 +7,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user || (session.user as any).role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const { errorResponse } = await verifyAdmin();
+    if (errorResponse) return errorResponse;
 
     const { id } = await params;
 
@@ -63,16 +61,14 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user || (session.user as any).role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const { errorResponse, session } = await verifyAdmin();
+    if (errorResponse) return errorResponse;
 
     const { id } = await params;
     const { disabled } = await req.json();
 
     // Prevent admin from disabling themselves
-    if (id === (session.user as any).id) {
+    if (id === session?.user?.id) {
       return NextResponse.json(
         { error: "Cannot disable your own account" },
         { status: 400 }

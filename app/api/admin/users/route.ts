@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { verifyAdmin } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const session = await auth();
-    if (!session?.user || (session.user as any).role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const { errorResponse } = await verifyAdmin();
+    if (errorResponse) return errorResponse;
 
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },

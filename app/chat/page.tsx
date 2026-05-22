@@ -21,12 +21,17 @@ export default function ChatPage() {
     const [ending, setEnding] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
 
-    const subject = (session?.user as any)?.subject || "General";
-    const gradeLevel = (session?.user as any)?.gradeLevel || "";
+    const user = session?.user as { subject?: string; gradeLevel?: string } | undefined;
+    const subject = user?.subject || "General";
+    const gradeLevel = user?.gradeLevel || "";
 
     useEffect(() => {
-        if (status === "unauthenticated") router.push("/login");
-    }, [status]);
+        if (status === "unauthenticated") {
+            router.push("/login");
+        } else if (status === "authenticated" && session?.user?.role === "admin") {
+            router.push("/admin");
+        }
+    }, [status, session, router]);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,14 +40,16 @@ export default function ChatPage() {
     // Welcome message on load
     useEffect(() => {
         if (status === "authenticated" && messages.length === 0) {
-            setMessages([
-                {
-                    role: "assistant",
-                    content: `Hi ${session?.user?.name}! 👋 I'm your ${subject} teaching assistant. Tell me what topic or lesson you'd like to plan today, and I'll help you build something great for your ${gradeLevel} students!`,
-                },
-            ]);
+            setTimeout(() => {
+                setMessages([
+                    {
+                        role: "assistant",
+                        content: `Hi ${session?.user?.name}! 👋 I'm your ${subject} teaching assistant. Tell me what topic or lesson you'd like to plan today, and I'll help you build something great for your ${gradeLevel} students!`,
+                    },
+                ]);
+            }, 0);
         }
-    }, [status]);
+    }, [status, messages.length, session?.user?.name, subject, gradeLevel]);
 
     const sendMessage = async () => {
         if (!input.trim() || loading) return;
@@ -72,7 +79,7 @@ export default function ChatPage() {
                     ready: data.ready || false,
                 },
             ]);
-        } catch (error) {
+        } catch {
             setMessages([
                 ...updatedMessages,
                 {

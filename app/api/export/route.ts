@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { verifyUser } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 import { put } from "@vercel/blob";
-import { generateDocx } from "@/lib/generators/docx";
+import { generateDocx, LessonPlan } from "@/lib/generators/docx";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session || !session.user || !session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await verifyUser();
+    if (authResult.errorResponse) return authResult.errorResponse;
+    const { session } = authResult;
 
     const { lessonPlanId, format } = await req.json();
 
@@ -21,7 +20,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Lesson plan not found" }, { status: 404 });
     }
 
-    const structure = lessonPlan.structure as any;
+    if (lessonPlan.userId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const structure = lessonPlan.structure as unknown as LessonPlan;
     const filename = `${structure.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}`;
 
     let fileBuffer: Buffer;

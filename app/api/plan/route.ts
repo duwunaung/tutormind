@@ -1,13 +1,12 @@
-import { auth } from "@/auth";
+import { verifyUser } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await verifyUser();
+    if (authResult.errorResponse) return authResult.errorResponse;
+    const { session } = authResult;
 
     const { answers, subject } = await req.json();
     const { planType } = answers;
@@ -37,7 +36,20 @@ export async function POST(req: Request) {
   }
 }
 
-function buildPrompt(answers: any, subject: string): string {
+interface Answers {
+  planType: string;
+  planTitle?: string;
+  courseDuration?: string;
+  sessionsPerWeek?: string;
+  sessionLength?: string;
+  studentLevel?: string;
+  goal?: string;
+  instructions?: string;
+  topic?: string;
+  lessonGoal?: string;
+}
+
+function buildPrompt(answers: Answers, subject: string): string {
   if (answers.planType === "course") {
     return `Create a full ${subject} course plan with the following details:
 - Course title: ${answers.planTitle}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { verifyUser } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 import { del } from "@vercel/blob";
 
@@ -8,10 +8,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }  // ← Promise
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResult = await verifyUser();
+    if (authResult.errorResponse) return authResult.errorResponse;
+    const { session } = authResult;
 
     const { id } = await params;  // ← await params
 

@@ -1,25 +1,31 @@
 import { groq } from "@/lib/ai";
-import { auth } from "@/auth";
+import { verifyUser } from "@/lib/auth-util";
 import { getSystemPrompt } from "@/lib/prompts";
 import { NextResponse } from "next/server";
 
+interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session || !session.user || !session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { errorResponse } = await verifyUser();
+    if (errorResponse) return errorResponse;
 
-    const { messages, subject } = await req.json();
+    const { messages, subject } = (await req.json()) as {
+      messages: ChatMessage[];
+      subject: string;
+    };
 
-    const filtered = messages.filter((_: any, i: number) => {
+    const filtered = messages.filter((_, i) => {
       if (i === 0 && messages[0].role === "assistant") return false;
       return true;
     });
 
     const groqMessages = [
       { role: "system" as const, content: getSystemPrompt(subject) },
-      ...filtered.map((m: any) => ({
+      ...filtered.map((m) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
       })),

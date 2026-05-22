@@ -28,8 +28,12 @@ export default function DashboardPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-  }, [status]);
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated" && session?.user?.role === "admin") {
+      router.push("/admin");
+    }
+  }, [status, session, router]);
 
   useEffect(() => {
     if (status !== "authenticated") return;

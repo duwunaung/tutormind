@@ -14,8 +14,9 @@ export default function AppHeader({ mode, actions }: AppHeaderProps) {
   const router = useRouter();
   const { data: session } = useSession();
 
-  const subject = (session?.user as any)?.subject || "";
-  const gradeLevel = (session?.user as any)?.gradeLevel || "";
+  const user = session?.user as { subject?: string; gradeLevel?: string } | undefined;
+  const subject = user?.subject || "";
+  const gradeLevel = user?.gradeLevel || "";
 
   return (
     <div className="bg-gray-900 border-b border-gray-800 px-4 py-3 sticky top-0 z-10">
