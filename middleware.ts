@@ -12,6 +12,7 @@ export const config = {
     "/new-plan/:path*",
     "/lesson-plan/:path*",
     "/admin/:path*",
-    "/suspended",    
+    "/suspended",
+    "/expired",
   ],
 };

@@ -12,6 +12,7 @@ type User = {
   gradeLevel: string;
   role: string;
   disabled: boolean;
+  subscriptionExpiresAt: string | null;
   createdAt: string;
   _count: { sessions: number; lessonPlans: number };
 };
@@ -28,6 +29,51 @@ function AdminUsersContent() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
+
+  // Create user states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [subjectsList, setSubjectsList] = useState<string[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [createSuccess, setCreateSuccess] = useState("");
+  const [createForm, setCreateForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "user" as "user" | "admin",
+    subject: "",
+    gradeLevel: "",
+    duration: "trial",
+  });
+
+  const GRADE_LEVELS = [
+    "Elementary (K-5)",
+    "Middle School (6-8)",
+    "High School (9-12)",
+    "College / Adult",
+  ];
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const res = await fetch("/api/subjects");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.subjects) && data.subjects.length > 0) {
+            setSubjectsList(data.subjects);
+          } else {
+            setSubjectsList(["Math", "Science", "English / Language Arts", "History", "Software Engineering"]);
+          }
+        } else {
+          setSubjectsList(["Math", "Science", "English / Language Arts", "History", "Software Engineering"]);
+        }
+      } catch {
+        setSubjectsList(["Math", "Science", "English / Language Arts", "History", "Software Engineering"]);
+      }
+    };
+    fetchSubjects();
+  }, []);
 
   // Search debouncing
   useEffect(() => {
@@ -91,17 +137,133 @@ function AdminUsersContent() {
       day: "numeric",
     });
 
+  const getSubscriptionBadge = (user: User) => {
+    if (user.role === "admin") {
+      return (
+        <span className="bg-purple-600/20 text-purple-400 text-xs px-2 py-0.5 rounded-full border border-purple-600/30">
+          Admin / Lifetime
+        </span>
+      );
+    }
+    if (!user.subscriptionExpiresAt) {
+      return (
+        <span className="bg-gray-800 text-gray-400 text-xs px-2 py-0.5 rounded-full border border-gray-700">
+          No Subscription
+        </span>
+      );
+    }
+    const isExpired = new Date() > new Date(user.subscriptionExpiresAt);
+    if (isExpired) {
+      return (
+        <span className="bg-red-500/10 text-red-400 text-xs px-2 py-0.5 rounded-full border border-red-500/20">
+          Expired ({formatDate(user.subscriptionExpiresAt)})
+        </span>
+      );
+    }
+    return (
+      <span className="bg-green-500/10 text-green-400 text-xs px-2 py-0.5 rounded-full border border-green-500/20">
+        Active (Until {formatDate(user.subscriptionExpiresAt)})
+      </span>
+    );
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateLoading(true);
+    setCreateError("");
+    setCreateSuccess("");
+
+    let subscriptionExpiresAt: Date | null = null;
+    if (createForm.role === "user") {
+      const now = Date.now();
+      if (createForm.duration === "trial") {
+        subscriptionExpiresAt = new Date(now + 7 * 24 * 60 * 60 * 1000);
+      } else if (createForm.duration === "1m") {
+        subscriptionExpiresAt = new Date(now + 30 * 24 * 60 * 60 * 1000);
+      } else if (createForm.duration === "3m") {
+        subscriptionExpiresAt = new Date(now + 90 * 24 * 60 * 60 * 1000);
+      } else if (createForm.duration === "1y") {
+        subscriptionExpiresAt = new Date(now + 365 * 24 * 60 * 60 * 1000);
+      }
+    }
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: createForm.name,
+          email: createForm.email,
+          password: createForm.password,
+          role: createForm.role,
+          subject: createForm.subject,
+          gradeLevel: createForm.gradeLevel,
+          subscriptionExpiresAt: subscriptionExpiresAt ? subscriptionExpiresAt.toISOString() : null,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setCreateError(data.error || "Failed to create account");
+        return;
+      }
+
+      setCreateSuccess("Account created successfully!");
+      
+      // Reset form
+      setCreateForm({
+        name: "",
+        email: "",
+        password: "",
+        role: "user",
+        subject: "",
+        gradeLevel: "",
+        duration: "trial",
+      });
+      setShowPassword(false);
+
+      // Refresh list
+      const fetchRes = await fetch(
+        `/api/admin/users?page=${page}&limit=10&search=${encodeURIComponent(
+          debouncedSearch
+        )}`
+      );
+      const fetchVal = await fetchRes.json();
+      setUsers(fetchVal.users || []);
+      setTotalPages(fetchVal.totalPages || 1);
+      setTotalUsers(fetchVal.total || 0);
+
+      setTimeout(() => {
+        setShowCreateModal(false);
+        setCreateSuccess("");
+      }, 1500);
+
+    } catch {
+      setCreateError("Failed to submit request.");
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col lg:flex-row">
       <AdminHeader />
 
       <main className="flex-1 lg:pl-64 w-full">
         <div className="max-w-6xl w-full mx-auto px-6 py-8 flex flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-bold">User Directory</h1>
-            <p className="text-gray-500 text-xs mt-1">
-              Manage registered accounts, view session logs, and disable/enable profiles.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">User Directory</h1>
+              <p className="text-gray-500 text-xs mt-1">
+                Manage registered accounts, view session logs, and disable/enable profiles.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-lg shadow-blue-600/20 flex items-center gap-1.5 self-start sm:self-center"
+            >
+              <span>➕ Create Account</span>
+            </button>
           </div>
 
           <section className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col">
@@ -157,16 +319,12 @@ function AdminUsersContent() {
                       className="flex-1 min-w-0 cursor-pointer"
                       onClick={() => router.push(`/admin/users/${u.id}`)}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <p className="text-white text-sm font-medium">{u.name}</p>
-                        {u.role === "admin" && (
-                          <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
-                            Admin
-                          </span>
-                        )}
+                        {getSubscriptionBadge(u)}
                         {u.disabled && (
                           <span className="bg-red-600/20 text-red-400 text-xs px-2 py-0.5 rounded-full border border-red-600/30">
-                            Disabled
+                            Suspended
                           </span>
                         )}
                       </div>
@@ -248,6 +406,156 @@ function AdminUsersContent() {
             </div>
           </section>
         </div>
+
+        {/* Create Modal Dialog */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div 
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowCreateModal(false)}
+            />
+            
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6 relative z-10 shadow-2xl overflow-y-auto max-h-[90vh]">
+              <h2 className="text-xl font-bold text-white mb-1">Create Account</h2>
+              <p className="text-gray-400 text-xs mb-6">Manually register a user or administrative staff.</p>
+
+              {createError && (
+                <div className="bg-red-500/10 text-red-400 text-xs rounded-lg p-3 mb-4 border border-red-500/20">
+                  {createError}
+                </div>
+              )}
+
+              {createSuccess && (
+                <div className="bg-green-500/10 text-green-400 text-xs rounded-lg p-3 mb-4 border border-green-500/20">
+                  {createSuccess}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Jane Smith"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="jane@email.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={createForm.password}
+                      onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-3 pr-10 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Min 8 characters"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 text-xs px-1"
+                    >
+                      {showPassword ? "👁️" : "🙈"}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">System Role</label>
+                  <select
+                    value={createForm.role}
+                    onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as "user" | "admin" })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="user">Regular User (App Subscriber)</option>
+                    <option value="admin">Administrator Staff</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Subject Specialization</label>
+                  <select
+                    required
+                    value={createForm.subject}
+                    onChange={(e) => setCreateForm({ ...createForm, subject: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select subject</option>
+                    {subjectsList.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1">Grade Level</label>
+                  <select
+                    required
+                    value={createForm.gradeLevel}
+                    onChange={(e) => setCreateForm({ ...createForm, gradeLevel: e.target.value })}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select grade level</option>
+                    {GRADE_LEVELS.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {createForm.role === "user" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-400 mb-1">Initial Subscription Duration</label>
+                    <select
+                      value={createForm.duration}
+                      onChange={(e) => setCreateForm({ ...createForm, duration: e.target.value })}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="trial">7-Day Free Trial</option>
+                      <option value="none">None (Expired / Needs Payment)</option>
+                      <option value="1m">1 Month</option>
+                      <option value="3m">3 Months</option>
+                      <option value="1y">1 Year</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-gray-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-xs transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createLoading}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition disabled:opacity-50"
+                  >
+                    {createLoading ? "Creating..." : "Create Account"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
