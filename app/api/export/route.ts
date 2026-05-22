@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyUser } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 import { generateDocx, LessonPlan } from "@/lib/generators/docx";
 import { createAuditLog } from "@/lib/audit-logger";
 
@@ -38,6 +38,15 @@ export async function POST(req: Request) {
       fileExtension = "docx";
     } else {
       return NextResponse.json({ error: "Invalid format" }, { status: 400 });
+    }
+
+    // Delete old blob if it exists
+    if (lessonPlan.blobUrl) {
+      try {
+        await del(lessonPlan.blobUrl);
+      } catch (e) {
+        console.error("Failed to delete old blob:", e);
+      }
     }
 
     // Upload to Vercel Blob

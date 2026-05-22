@@ -14,5 +14,7 @@ export const config = {
     "/admin/:path*",
     "/suspended",
     "/expired",
+    "/login",
+    "/register",
   ],
 };

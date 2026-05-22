@@ -17,6 +17,15 @@ export const authConfig: NextAuthConfig = {
         return Response.redirect(new URL("/suspended", nextUrl));
       }
 
+      // Redirect logged-in users away from auth pages
+      const isAuthPage = nextUrl.pathname === "/login" || nextUrl.pathname === "/register";
+      if (isAuthPage && isLoggedIn) {
+        if (isAdmin) {
+          return Response.redirect(new URL("/admin", nextUrl));
+        }
+        return Response.redirect(new URL("/dashboard", nextUrl));
+      }
+
       // Check subscription expiry for standard users
       let isExpired = false;
       if (isLoggedIn && !isAdmin) {
