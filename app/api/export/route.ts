@@ -3,6 +3,7 @@ import { verifyUser } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 import { put } from "@vercel/blob";
 import { generateDocx, LessonPlan } from "@/lib/generators/docx";
+import { createAuditLog } from "@/lib/audit-logger";
 
 export async function POST(req: Request) {
   try {
@@ -53,6 +54,16 @@ export async function POST(req: Request) {
     await prisma.lessonPlan.update({
       where: { id: lessonPlanId },
       data: { blobUrl: blob.url },
+    });
+
+    await createAuditLog({
+      action: "EXPORT_PLAN",
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      actorName: session.user.name,
+      targetId: lessonPlan.id,
+      targetName: structure.title,
+      details: { format, blobUrl: blob.url },
     });
 
     return NextResponse.json({ url: blob.url });

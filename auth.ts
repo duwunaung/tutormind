@@ -77,4 +77,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
   },
+  events: {
+    async signIn({ user }) {
+      if (user?.id) {
+        try {
+          await prisma.auditLog.create({
+            data: {
+              action: "USER_LOGIN",
+              actorId: user.id,
+              actorEmail: user.email || "unknown",
+              actorName: user.name || "unknown",
+              targetId: user.id,
+              targetName: user.email || "unknown",
+              details: { role: (user as { role?: string }).role || "user" },
+            },
+          });
+        } catch (e) {
+          console.error("Sign-in audit log error:", e);
+        }
+      }
+    },
+  },
 });

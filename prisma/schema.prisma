@@ -52,3 +52,15 @@ model PromptTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String   // e.g. USER_LOGIN, USER_CREATE, USER_SUSPEND, USER_ACTIVATE, ROLE_CHANGE, SUBSCRIPTION_EXTEND, SUBSCRIPTION_REVOKE, PROMPT_CREATE, PROMPT_UPDATE, EXPORT_PLAN
+  actorId    String
+  actorEmail String
+  actorName  String
+  targetId   String?
+  targetName String?  // Target email/name or prompt subject
+  details    Json?
+  createdAt  DateTime @default(now())
+}
