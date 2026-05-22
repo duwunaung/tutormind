@@ -39,9 +39,42 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           gradeLevel: user.gradeLevel,          
           role: user.role,          
           disabled: user.disabled,
-          subscriptionExpiresAt: user.subscriptionExpiresAt,
+          subscriptionExpiresAt: user.subscriptionExpiresAt ? user.subscriptionExpiresAt.toISOString() : null,
         };
       },
     }),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+    async jwt({ token, user }) {
+      if (user) {
+        const u = user as { id?: string; subject?: string; gradeLevel?: string; role?: string; disabled?: boolean; subscriptionExpiresAt?: Date | string | null };
+        token.id = u.id;
+        token.subject = u.subject;
+        token.gradeLevel = u.gradeLevel;
+        token.role = u.role;
+        token.disabled = u.disabled;
+        token.subscriptionExpiresAt = u.subscriptionExpiresAt
+          ? (u.subscriptionExpiresAt instanceof Date ? u.subscriptionExpiresAt.toISOString() : u.subscriptionExpiresAt)
+          : null;
+      } else if (token.id && typeof token.id === "string") {
+        try {
+          const latest = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: { disabled: true, role: true, subscriptionExpiresAt: true },
+          });
+          if (latest) {
+            token.disabled = latest.disabled;
+            token.role = latest.role;
+            token.subscriptionExpiresAt = latest.subscriptionExpiresAt
+              ? latest.subscriptionExpiresAt.toISOString()
+              : null;
+          }
+        } catch (e) {
+          console.error("JWT sync error:", e);
+        }
+      }
+      return token;
+    },
+  },
 });

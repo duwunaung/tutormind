@@ -7,6 +7,7 @@ declare module "next-auth" {
     gradeLevel?: string;
     role?: string;
     disabled?: boolean;
+    subscriptionExpiresAt?: string | null;
   }
 
   interface Session {
@@ -16,6 +17,7 @@ declare module "next-auth" {
       gradeLevel?: string;
       role?: string;
       disabled?: boolean;
+      subscriptionExpiresAt?: string | null;
     } & DefaultSession["user"];
   }
 }
@@ -27,5 +29,6 @@ declare module "next-auth/jwt" {
     gradeLevel?: string;
     role?: string;
     disabled?: boolean;
+    subscriptionExpiresAt?: string | null;
   }
 }

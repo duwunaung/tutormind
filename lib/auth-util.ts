@@ -22,6 +22,7 @@ export type VerifyUserResult =
       user: {
         disabled: boolean;
         role: string;
+        subscriptionExpiresAt: Date | null;
       };
     }
   | {
@@ -44,7 +45,7 @@ export async function verifyUser(): Promise<VerifyUserResult> {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { disabled: true, role: true },
+    select: { disabled: true, role: true, subscriptionExpiresAt: true },
   });
 
   if (!user || user.disabled) {
@@ -53,6 +54,21 @@ export async function verifyUser(): Promise<VerifyUserResult> {
       session: null,
       user: null,
     };
+  }
+
+  // Check subscription expiry for standard users
+  if (user.role !== "admin") {
+    const isExpired = user.subscriptionExpiresAt
+      ? new Date() > new Date(user.subscriptionExpiresAt)
+      : true;
+
+    if (isExpired) {
+      return {
+        errorResponse: NextResponse.json({ error: "Subscription expired" }, { status: 403 }),
+        session: null,
+        user: null,
+      };
+    }
   }
 
   return {
