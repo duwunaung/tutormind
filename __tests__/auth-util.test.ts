@@ -51,15 +51,62 @@ describe('Auth Utility (auth-util)', () => {
       expect(result.session).toBeNull();
     });
 
-    it('should return session and user details if authenticated and active', async () => {
+    it('should return session and user details if authenticated and active with active subscription', async () => {
       const mockSession = { user: { id: 'user-1', email: 'test@test.com' } };
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
       vi.mocked(auth).mockResolvedValueOnce(mockSession);
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ disabled: false, role: 'user' } as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+        disabled: false,
+        role: 'user',
+        subscriptionExpiresAt: futureDate,
+      } as any);
 
       const result = await verifyUser();
       expect(result.errorResponse).toBeNull();
       expect(result.session).toEqual(mockSession);
-      expect(result.user).toEqual({ disabled: false, role: 'user' });
+      expect(result.user).toEqual({
+        disabled: false,
+        role: 'user',
+        subscriptionExpiresAt: futureDate,
+      });
+    });
+
+    it('should return forbidden response if user subscription is expired', async () => {
+      const mockSession = { user: { id: 'user-1', email: 'test@test.com' } };
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
+
+      vi.mocked(auth).mockResolvedValueOnce(mockSession);
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+        disabled: false,
+        role: 'user',
+        subscriptionExpiresAt: pastDate,
+      } as any);
+
+      const result = await verifyUser();
+      expect(result.errorResponse?.status).toBe(403);
+      const data = await result.errorResponse?.json();
+      expect(data).toEqual({ error: "Subscription expired" });
+      expect(result.session).toBeNull();
+    });
+
+    it('should return forbidden response if user subscription is missing', async () => {
+      const mockSession = { user: { id: 'user-1', email: 'test@test.com' } };
+
+      vi.mocked(auth).mockResolvedValueOnce(mockSession);
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+        disabled: false,
+        role: 'user',
+        subscriptionExpiresAt: null,
+      } as any);
+
+      const result = await verifyUser();
+      expect(result.errorResponse?.status).toBe(403);
+      const data = await result.errorResponse?.json();
+      expect(data).toEqual({ error: "Subscription expired" });
+      expect(result.session).toBeNull();
     });
   });
 
@@ -72,17 +119,30 @@ describe('Auth Utility (auth-util)', () => {
     });
 
     it('should return forbidden if user is not an admin', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
       vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'user-1' } });
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ disabled: false, role: 'user' } as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+        disabled: false,
+        role: 'user',
+        subscriptionExpiresAt: futureDate,
+      } as any);
 
       const result = await verifyAdmin();
       expect(result.errorResponse?.status).toBe(403);
+      const data = await result.errorResponse?.json();
+      expect(data).toEqual({ error: "Forbidden" });
     });
 
     it('should pass if user is an admin', async () => {
       const mockSession = { user: { id: 'admin-1' } };
       vi.mocked(auth).mockResolvedValueOnce(mockSession);
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ disabled: false, role: 'admin' } as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+        disabled: false,
+        role: 'admin',
+        subscriptionExpiresAt: null,
+      } as any);
 
       const result = await verifyAdmin();
       expect(result.errorResponse).toBeNull();
