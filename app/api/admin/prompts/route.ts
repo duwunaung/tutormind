@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 import { SUBJECT_PROMPTS } from "@/lib/prompts";
+import { createAuditLog } from "@/lib/audit-logger";
 
 export async function GET() {
   try {
@@ -48,8 +49,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { errorResponse } = await verifyAdmin();
-    if (errorResponse) return errorResponse;
+    const { errorResponse, session } = await verifyAdmin();
+    if (errorResponse || !session) return errorResponse || NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { subject, template, temperature = 0.7 } = await req.json();
 
@@ -85,10 +86,22 @@ export async function POST(req: Request) {
       },
     });
 
+    await createAuditLog({
+      action: "PROMPT_CREATE",
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      actorName: session.user.name,
+      targetId: newTemplate.id,
+      targetName: newTemplate.subject,
+      details: {
+        subject: newTemplate.subject,
+        temperature: newTemplate.temperature,
+      },
+    });
+
     return NextResponse.json({ template: newTemplate }, { status: 201 });
   } catch (error) {
     console.error("Create prompt template error:", error);
     return NextResponse.json({ error: "Failed to create subject template" }, { status: 500 });
   }
 }
-

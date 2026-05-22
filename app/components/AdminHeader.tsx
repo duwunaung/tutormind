@@ -58,6 +58,17 @@ export default function AdminHeader() {
                 <span className="text-base">🧙</span>
                 <span>Prompts</span>
               </button>
+              <button
+                onClick={() => router.push("/admin/logs")}
+                className={`flex items-center gap-3 text-sm px-4 py-2.5 rounded-xl transition font-medium ${
+                  pathname?.startsWith("/admin/logs")
+                    ? "text-white bg-gray-900 border border-gray-800"
+                    : "text-gray-400 hover:text-white hover:bg-gray-900/50"
+                }`}
+              >
+                <span className="text-base">📋</span>
+                <span>Audit Logs</span>
+              </button>
             </nav>
           </div>
 
@@ -200,6 +211,20 @@ export default function AdminHeader() {
               >
                 <span className="text-base">🧙</span>
                 <span>Prompts</span>
+              </button>
+              <button
+                onClick={() => {
+                  router.push("/admin/logs");
+                  setIsOpen(false);
+                }}
+                className={`flex items-center gap-3 text-sm px-4 py-2.5 rounded-xl transition font-medium ${
+                  pathname?.startsWith("/admin/logs")
+                    ? "text-white bg-gray-900 border border-gray-800"
+                    : "text-gray-400 hover:text-white hover:bg-gray-900/50"
+                }`}
+              >
+                <span className="text-base">📋</span>
+                <span>Audit Logs</span>
               </button>
             </nav>
           </div>

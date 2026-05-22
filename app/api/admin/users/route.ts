@@ -3,6 +3,7 @@ import { verifyAdmin } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { createAuditLog } from "@/lib/audit-logger";
 
 export async function GET(req: Request) {
   try {
@@ -69,8 +70,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { errorResponse } = await verifyAdmin();
-    if (errorResponse) return errorResponse;
+    const { errorResponse, session } = await verifyAdmin();
+    if (errorResponse || !session) return errorResponse || NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { name, email, password, role, subject, gradeLevel, subscriptionExpiresAt } = body;
@@ -117,6 +118,22 @@ export async function POST(req: Request) {
         subscriptionExpiresAt: role === "user"
           ? (subscriptionExpiresAt ? new Date(subscriptionExpiresAt) : null)
           : null,
+      },
+    });
+
+    await createAuditLog({
+      action: "USER_CREATE",
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      actorName: session.user.name,
+      targetId: user.id,
+      targetName: user.email,
+      details: {
+        role: user.role,
+        name: user.name,
+        subject: user.subject,
+        gradeLevel: user.gradeLevel,
+        subscriptionExpiresAt: user.subscriptionExpiresAt ? user.subscriptionExpiresAt.toISOString() : null,
       },
     });
 

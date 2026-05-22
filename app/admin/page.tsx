@@ -481,7 +481,7 @@ function AdminDashboardContent() {
                     <p className="text-[10px] text-gray-500">Breakdown of student grade levels</p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-center gap-4 my-2">
+                  <div className="flex flex-col items-center gap-6 mt-4 mb-2">
                     <div className="relative w-44 h-44 flex items-center justify-center shrink-0">
                       <svg viewBox="0 0 180 180" width="100%" height="100%" className="overflow-visible">
                         <circle
