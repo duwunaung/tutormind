@@ -45,6 +45,43 @@ Focus on:
 Always structure suggestions in a practical, classroom-ready format.`,
 };
 
+import { prisma } from "@/lib/prisma";
+
+export async function getPromptConfig(subject: string): Promise<{ systemPrompt: string; temperature: number }> {
+  let template = SUBJECT_PROMPTS[subject] || `You are an expert tutor assistant. Help plan engaging and effective lessons.`;
+  let temperature = 0.7;
+
+  try {
+    let templateObj = await prisma.promptTemplate.findUnique({
+      where: { subject },
+    });
+
+    // Lazy initialization / self-healing
+    if (!templateObj) {
+      templateObj = await prisma.promptTemplate.create({
+        data: {
+          subject,
+          template,
+          temperature,
+        },
+      });
+    }
+
+    template = templateObj.template;
+    temperature = templateObj.temperature;
+  } catch (err) {
+    console.error("Failed to fetch or seed prompt template from DB, using fallback:", err);
+  }
+
+  const systemPrompt =
+    template +
+    `\n\nIMPORTANT INSTRUCTIONS:
+- Ask clarifying questions naturally to gather: plan type (course or lesson), topic, student level, duration, goals, and any special instructions.
+- Once you have enough information to generate a plan, end your message with exactly this token on its own line: [READY_TO_GENERATE]
+- Only include [READY_TO_GENERATE] when you have collected enough details to build a complete plan. Do not include it in every message.`;
+
+  return { systemPrompt, temperature };
+}
 
 export const getSystemPrompt = (subject: string): string => {
   const base =

@@ -42,3 +42,12 @@ model LessonPlan {
   session     Session   @relation(fields: [sessionId], references: [id])
   sessionId   String    @unique
 }
+
+model PromptTemplate {
+  id          String   @id @default(cuid())
+  subject     String   @unique
+  template    String
+  temperature Float    @default(0.7)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
