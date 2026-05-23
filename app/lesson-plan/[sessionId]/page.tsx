@@ -185,6 +185,8 @@ export default function LessonPlanPage() {
     setRefining(true);
     setRefineError("");
 
+    const structureToSend = isEditing && editedPlan ? editedPlan : lessonPlan;
+
     try {
       const res = await fetch("/api/lesson-plan/adjust", {
         method: "POST",
@@ -192,7 +194,7 @@ export default function LessonPlanPage() {
         body: JSON.stringify({
           sessionId,
           instruction: refinePrompt,
-          currentStructure: lessonPlan,
+          currentStructure: structureToSend,
         }),
       });
 
@@ -203,6 +205,7 @@ export default function LessonPlanPage() {
       }
 
       setLessonPlan(data.lessonPlan.structure);
+      setEditedPlan(data.lessonPlan.structure);
       setRefinePrompt("");
     } catch (err) {
       console.error("Refine error:", err);
@@ -368,6 +371,45 @@ export default function LessonPlanPage() {
           </div>
 
           <div className="p-6 space-y-6">
+
+            {/* AI Refinement Widget inside Edit mode */}
+            {isEditing && (
+              <div className="bg-blue-600/5 border border-blue-500/20 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <span>✨</span> Quick AI Refinement
+                  </h3>
+                  <span className="text-blue-400 text-[10px] font-semibold">Refines all fields below</span>
+                </div>
+                <div className="flex gap-2 items-start">
+                  <textarea
+                    value={refinePrompt}
+                    onChange={(e) => setRefinePrompt(e.target.value)}
+                    placeholder="Enter instructions for AI to update the plan (e.g. 'Add a hands-on project to section 3')..."
+                    rows={2}
+                    disabled={refining}
+                    className="flex-1 bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  />
+                  <button
+                    onClick={handleRefine}
+                    disabled={refining || !refinePrompt.trim()}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white text-xs px-4 py-3 sm:py-2.5 rounded-xl transition font-semibold cursor-pointer shrink-0 h-[40px] flex items-center justify-center"
+                  >
+                    {refining ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Refining...
+                      </span>
+                    ) : (
+                      "Apply ✨"
+                    )}
+                  </button>
+                </div>
+                {refineError && (
+                  <p className="text-red-400 text-xs">⚠️ {refineError}</p>
+                )}
+              </div>
+            )}
 
             {/* Course Overview */}
             {lessonPlan.type === "course" && (lessonPlan.courseOverview || isEditing) && (
@@ -960,48 +1002,6 @@ export default function LessonPlanPage() {
 
           </div>
         </div>
-
-        {/* Refine Plan Card */}
-        {!isEditing && (
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5 mt-6 space-y-4 shadow-xl shadow-black/10">
-            <div>
-              <h3 className="text-white font-semibold text-sm flex items-center gap-1.5">
-                <span>✨</span> Refine Plan with AI
-              </h3>
-              <p className="text-gray-400 text-xs mt-1">
-                Tell the AI how you want to adjust or update this plan (e.g. "Add a hands-on lab activity about friction" or "Make the lessons shorter").
-              </p>
-            </div>
-
-            <div className="flex gap-2 items-start">
-              <textarea
-                value={refinePrompt}
-                onChange={(e) => setRefinePrompt(e.target.value)}
-                placeholder="Ask AI to modify this plan..."
-                rows={2}
-                disabled={refining}
-                className="flex-1 bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              />
-              <button
-                onClick={handleRefine}
-                disabled={refining || !refinePrompt.trim()}
-                className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white text-xs px-4 py-3 sm:py-2.5 rounded-xl transition font-semibold cursor-pointer shrink-0 h-[42px] sm:h-auto flex items-center justify-center"
-              >
-                {refining ? (
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Refining...
-                  </span>
-                ) : (
-                  "Apply ✨"
-                )}
-              </button>
-            </div>
-            {refineError && (
-              <p className="text-red-400 text-xs mt-1">⚠️ {refineError}</p>
-            )}
-          </div>
-        )}
 
       </div>
 
