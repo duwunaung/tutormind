@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import AppHeader from "@/app/components/AppHeader";
+import AppFooter from "@/app/components/AppFooter";
 
 type PlanType = "course" | "lesson";
 type Mode = "pick" | "wizard";
@@ -307,45 +308,44 @@ export default function NewPlanPage() {
 
   // ── Render ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-950 flex flex-col">
       {/* Header */}
       <AppHeader mode="wizard" />
 
-
-      <div className="max-w-lg mx-auto px-6 mt-12">
+      <div className="max-w-lg w-full mx-auto px-4 sm:px-6 py-6 sm:py-12 flex-1 flex flex-col justify-start">
         {mode === "pick" ? (
           /* ── Mode picker ── */
-          <div className="space-y-8">
+          <div className="space-y-8 my-auto">
             <div className="text-center">
-              <h2 className="text-white text-xl font-semibold">How would you like to create your plan?</h2>
+              <h2 className="text-white text-xl font-bold tracking-tight">How would you like to create your plan?</h2>
               <p className="text-gray-400 text-sm mt-2">Choose the style that works best for you</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 onClick={() => setMode("wizard")}
-                className="bg-gray-900 hover:bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-2xl p-6 text-left transition-all group"
+                className="bg-gray-900 hover:bg-gray-800 border border-gray-705 border-gray-800 hover:border-blue-500 rounded-2xl p-6 text-left transition-all group cursor-pointer"
               >
                 <div className="text-3xl mb-3">🧙</div>
                 <h3 className="text-white font-semibold mb-1">Wizard</h3>
                 <p className="text-gray-400 text-xs leading-relaxed">
                   Step-by-step guided questions. Best if you want structure and quick results.
                 </p>
-                <div className="mt-4 text-blue-400 text-xs font-medium group-hover:text-blue-300">
+                <div className="mt-4 text-blue-400 text-xs font-semibold group-hover:text-blue-300">
                   Start wizard →
                 </div>
               </button>
 
               <button
                 onClick={() => router.push("/chat")}
-                className="bg-gray-900 hover:bg-gray-800 border border-gray-700 hover:border-blue-500 rounded-2xl p-6 text-left transition-all group"
+                className="bg-gray-900 hover:bg-gray-800 border border-gray-705 border-gray-800 hover:border-blue-500 rounded-2xl p-6 text-left transition-all group cursor-pointer"
               >
                 <div className="text-3xl mb-3">💬</div>
                 <h3 className="text-white font-semibold mb-1">Chat</h3>
                 <p className="text-gray-400 text-xs leading-relaxed">
                   Free-form conversation. Best if you prefer to describe things naturally.
                 </p>
-                <div className="mt-4 text-blue-400 text-xs font-medium group-hover:text-blue-300">
+                <div className="mt-4 text-blue-400 text-xs font-semibold group-hover:text-blue-300">
                   Open chat →
                 </div>
               </button>
@@ -370,7 +370,7 @@ export default function NewPlanPage() {
             </div>
 
             {/* Step card */}
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 min-h-[220px]">
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 min-h-[220px] flex flex-col justify-center">
               {renderStep()}
             </div>
 
@@ -378,20 +378,20 @@ export default function NewPlanPage() {
             <div className="flex justify-between items-center mt-4">
               <button
                 onClick={() => step === 1 ? setMode("pick") : setStep((s) => s - 1)}
-                className="text-gray-400 hover:text-white text-sm px-3 py-2 transition"
+                className="text-gray-400 hover:text-white text-sm px-3 py-2 transition font-medium cursor-pointer"
               >
                 ← Back
               </button>
 
               {canNext() && step < totalSteps && (
-                <span className="text-gray-600 text-xs">press Enter ↵</span>
+                <span className="text-gray-600 text-xs hidden sm:inline">press Enter ↵</span>
               )}
 
               {step < totalSteps ? (
                 <button
                   onClick={() => setStep((s) => s + 1)}
                   disabled={!canNext()}
-                  className="bg-blue-600 hover:bg-blue-500 disabled:opacity-30 text-white text-sm px-5 py-2 rounded-xl transition"
+                  className="bg-blue-600 hover:bg-blue-500 disabled:opacity-30 text-white text-sm px-5 py-2.5 rounded-xl transition font-medium cursor-pointer"
                 >
                   Next →
                 </button>
@@ -399,7 +399,7 @@ export default function NewPlanPage() {
                 <button
                   onClick={handleGenerate}
                   disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm px-5 py-2 rounded-xl transition font-medium"
+                  className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm px-5 py-2.5 rounded-xl transition font-semibold cursor-pointer"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -413,6 +413,8 @@ export default function NewPlanPage() {
           </>
         )}
       </div>
+
+      <AppFooter />
     </div>
   );
 }
