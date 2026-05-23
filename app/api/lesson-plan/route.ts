@@ -57,6 +57,7 @@ CHAT SESSION:
 ${chatHistory}
 
 Generate a detailed course plan in this EXACT JSON format.
+IMPORTANT: You MUST calculate the exact number of session sections needed based on the "Course duration" and "Sessions per week" specified in the chat history (for example, "2 weeks" duration at "3x sessions per week" = 6 sessions). You must generate exactly that number of section objects in the "sections" array (each object representing one session). Do not generate extra sections or sessions beyond this calculated count.
 IMPORTANT: In description fields, use plain text only. Do NOT use code blocks, backticks, or special characters inside string values.
 
 {
@@ -83,7 +84,7 @@ IMPORTANT: In description fields, use plain text only. Do NOT use code blocks, b
   "notes": "Any additional teaching notes"
 }
 
-IMPORTANT: Generate ALL sections as requested in the chat. If the user asked for 16 sections, generate exactly 16 sections in the sections array.
+IMPORTANT: Generate ALL sections as calculated. If the user asked for X sections, generate exactly X sections in the sections array.
 Return ONLY the JSON object. No markdown, no backticks, no code blocks, no extra text.`
 
             : `Based on this tutoring chat session, generate a structured lesson plan.
