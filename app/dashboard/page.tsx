@@ -15,6 +15,7 @@ type ChatSession = {
   id: string;
   title: string;
   subject: string;
+  planType: string;
   createdAt: string;
   lessonPlan: LessonPlan | null;
 };
@@ -100,6 +101,45 @@ export default function DashboardPage() {
     });
   };
 
+  const totalSessions = sessions.length;
+  const totalPlans = sessions.filter((s) => s.lessonPlan).length;
+  const totalCourses = sessions.filter((s) => s.lessonPlan && s.planType === "course").length;
+  const totalLessons = sessions.filter((s) => s.lessonPlan && s.planType === "lesson").length;
+
+  const userSubject = (session?.user as { subject?: string })?.subject || "General";
+  const userGrade = (session?.user as { gradeLevel?: string })?.gradeLevel || "All Levels";
+
+  const stats = [
+    {
+      title: "Plans Generated",
+      value: totalPlans,
+      desc: `${totalLessons} Lessons · ${totalCourses} Courses`,
+      color: "text-purple-400 border-purple-500/20 bg-purple-500/5",
+      icon: "✨",
+    },
+    {
+      title: "Chat Sessions",
+      value: totalSessions,
+      desc: "Total planning history",
+      color: "text-blue-400 border-blue-500/20 bg-blue-500/5",
+      icon: "💬",
+    },
+    {
+      title: "Saved Courses",
+      value: totalCourses,
+      desc: "Curriculums generated",
+      color: "text-indigo-400 border-indigo-500/20 bg-indigo-500/5",
+      icon: "📘",
+    },
+    {
+      title: "Tutor Specialty",
+      value: userSubject,
+      desc: userGrade,
+      color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
+      icon: "🎓",
+    },
+  ];
+
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -132,6 +172,31 @@ export default function DashboardPage() {
           >
             + New Plan
           </button>
+        </div>
+
+        {/* Tutor Analytics Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {stats.map((stat, idx) => (
+            <div
+              key={idx}
+              className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex flex-col justify-between h-28 hover:border-gray-700 transition duration-200 select-none"
+            >
+              <div className="flex justify-between items-start">
+                <span className="text-gray-400 text-xs font-semibold">{stat.title}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full border ${stat.color} font-medium tracking-wide flex items-center gap-1`}>
+                  <span>{stat.icon}</span>
+                </span>
+              </div>
+              <div className="min-w-0">
+                <div className="text-lg sm:text-2xl font-bold tracking-tight text-white mt-1.5 truncate" title={String(stat.value)}>
+                  {stat.value}
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1 truncate" title={stat.desc}>
+                  {stat.desc}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Sessions List */}
