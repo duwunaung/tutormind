@@ -223,8 +223,17 @@ export default function DashboardPage() {
               >
                 {/* Session Info */}
                 <div className="flex-1 min-w-0 w-full">
-                  <p className="text-white text-sm font-semibold truncate" title={s.title}>{s.title}</p>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs text-gray-500">
+                  <div className="flex items-center gap-2 mb-1.5 min-w-0">
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide border shrink-0 uppercase ${
+                      s.planType === "course"
+                        ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                        : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    }`}>
+                      {s.planType === "course" ? "📚 Course" : "📝 Lesson"}
+                    </span>
+                    <p className="text-white text-sm font-semibold truncate flex-1" title={s.title}>{s.title}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
                     <span>{s.subject}</span>
                     <span className="text-gray-700 font-bold select-none">·</span>
                     <span>{formatDate(s.createdAt)}</span>
