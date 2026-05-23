@@ -204,7 +204,7 @@ export default function ChatPage() {
             </div >
 
             {/* Input */}
-            < div className="bg-gray-900 border-t border-gray-800 px-4 py-3" >
+            < div className="bg-gray-900 border-t border-gray-800 px-4 py-3 pb-4" >
                 <div className="max-w-3xl mx-auto flex gap-2">
                     <input
                         type="text"
@@ -217,10 +217,14 @@ export default function ChatPage() {
                     <button
                         onClick={sendMessage}
                         disabled={loading || !input.trim()}
-                        className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition"
+                        className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer"
                     >
                         Send
                     </button>
+                </div>
+                <div className="max-w-3xl mx-auto flex items-center justify-between mt-3 text-[10px] text-gray-500 px-1 select-none">
+                    <span>© {new Date().getFullYear()} TutorMind. All rights reserved.</span>
+                    <span className="font-mono bg-gray-950 border border-gray-800/80 rounded px-1.5 py-0.5">v1.0.0</span>
                 </div>
             </div >
         </div >

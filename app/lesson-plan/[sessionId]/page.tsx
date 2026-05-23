@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AppHeader from "@/app/components/AppHeader";
+import AppFooter from "@/app/components/AppFooter";
 
 type Section = {
   sectionNumber: number;
@@ -202,11 +203,9 @@ export default function LessonPlanPage() {
   if (!lessonPlan) return null;
 
   return (
-    <div className="min-h-screen bg-gray-950 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
-
-        {/* Header */}
-        <AppHeader
+    <div className="min-h-screen bg-gray-950 flex flex-col">
+      {/* Header */}
+      <AppHeader
           actions={
             isEditing ? (
               <div className="flex gap-2">
@@ -252,6 +251,8 @@ export default function LessonPlanPage() {
             )
           }
         />
+
+        <div className="max-w-3xl w-full mx-auto px-4 py-6 sm:py-8 flex-1 flex flex-col justify-start">
 
         {saveError && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-200 text-sm px-4 py-2.5 rounded-xl mb-4 text-center">
@@ -510,9 +511,9 @@ export default function LessonPlanPage() {
                         key={i}
                         className="bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-3"
                       >
-                        <div className="flex justify-between items-center gap-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                           <div className="flex items-center gap-2 w-full">
-                            <span className="bg-blue-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">
+                            <span className="bg-blue-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0 select-none">
                               {i + 1}
                             </span>
                             <input
@@ -524,33 +525,35 @@ export default function LessonPlanPage() {
                                 setEditedPlan({ ...editedPlan, sections: updatedSecs });
                               }}
                               placeholder="Section Title"
-                              className="bg-gray-900 border border-gray-700/80 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white text-sm outline-none px-3 py-1 w-full transition"
+                              className="bg-gray-900 border border-gray-700/80 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white text-sm outline-none px-3 py-1.5 w-full transition"
                             />
                           </div>
-                          <input
-                            type="text"
-                            value={s.duration}
-                            onChange={(e) => {
-                              const updatedSecs = [...editedPlan.sections!];
-                              updatedSecs[i] = { ...s, duration: e.target.value };
-                              setEditedPlan({ ...editedPlan, sections: updatedSecs });
-                            }}
-                            placeholder="Duration"
-                            className="bg-gray-900 border border-gray-700/80 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white text-sm outline-none px-3 py-1 w-32 shrink-0 transition"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updatedSecs = editedPlan.sections!
-                                .filter((_, idx) => idx !== i)
-                                .map((sec, idx) => ({ ...sec, sectionNumber: idx + 1 }));
-                              setEditedPlan({ ...editedPlan, sections: updatedSecs });
-                            }}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition shrink-0"
-                            title="Delete Section"
-                          >
-                            🗑️
-                          </button>
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <input
+                              type="text"
+                              value={s.duration}
+                              onChange={(e) => {
+                                const updatedSecs = [...editedPlan.sections!];
+                                updatedSecs[i] = { ...s, duration: e.target.value };
+                                setEditedPlan({ ...editedPlan, sections: updatedSecs });
+                              }}
+                              placeholder="Duration"
+                              className="bg-gray-900 border border-gray-700/80 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white text-sm outline-none px-3 py-1.5 w-full sm:w-32 shrink-0 transition"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedSecs = editedPlan.sections!
+                                  .filter((_, idx) => idx !== i)
+                                  .map((sec, idx) => ({ ...sec, sectionNumber: idx + 1 }));
+                                setEditedPlan({ ...editedPlan, sections: updatedSecs });
+                              }}
+                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-2 rounded-lg transition shrink-0 cursor-pointer"
+                              title="Delete Section"
+                            >
+                              🗑️
+                            </button>
+                          </div>
                         </div>
 
                         <div>
@@ -921,6 +924,8 @@ export default function LessonPlanPage() {
           </div>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 }

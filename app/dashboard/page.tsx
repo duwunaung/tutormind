@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import AppHeader from "@/app/components/AppHeader";
+import AppFooter from "@/app/components/AppFooter";
 
 type LessonPlan = {
   id: string;
@@ -108,18 +109,18 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-950 flex flex-col">
       <AppHeader />
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex-1 flex flex-col justify-start">
 
         {/* Welcome + New Session */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               Welcome back, {session?.user?.name?.split(" ")[0]}! 👋
             </h2>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-gray-400 text-xs sm:text-sm mt-1">
               {sessions.length === 0
                 ? "Start your first session to get going"
                 : `You have ${sessions.length} session${sessions.length > 1 ? "s" : ""} so far`}
@@ -127,7 +128,7 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => router.push("/new-plan")}
-            className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition"
+            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition duration-200 w-full sm:w-auto text-center cursor-pointer shadow-lg shadow-blue-600/15"
           >
             + New Plan
           </button>
@@ -135,15 +136,15 @@ export default function DashboardPage() {
 
         {/* Sessions List */}
         {sessions.length === 0 ? (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center">
-            <p className="text-4xl mb-4">📚</p>
-            <p className="text-white font-medium mb-1">No sessions yet</p>
-            <p className="text-gray-400 text-sm mb-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 sm:p-12 text-center flex-1 flex flex-col items-center justify-center min-h-[300px]">
+            <p className="text-4xl mb-4 select-none">📚</p>
+            <p className="text-white font-semibold mb-1">No sessions yet</p>
+            <p className="text-gray-400 text-xs sm:text-sm mb-6">
               Create a plan to get started
             </p>
             <button
               onClick={() => router.push("/new-plan")}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm transition"
+              className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition cursor-pointer"
             >
               + New Plan
             </button>
@@ -153,38 +154,41 @@ export default function DashboardPage() {
             {sessions.map((s) => (
               <div
                 key={s.id}
-                className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex items-center justify-between hover:border-gray-700 transition"
+                className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-gray-700 transition gap-4"
               >
                 {/* Session Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-medium truncate">{s.title}</p>
-                  <div className="flex gap-3 mt-1">
-                    <span className="text-gray-500 text-xs">{s.subject}</span>
-                    <span className="text-gray-600 text-xs">·</span>
-                    <span className="text-gray-500 text-xs">{formatDate(s.createdAt)}</span>
+                <div className="flex-1 min-w-0 w-full">
+                  <p className="text-white text-sm font-semibold truncate" title={s.title}>{s.title}</p>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs text-gray-500">
+                    <span>{s.subject}</span>
+                    <span className="text-gray-700 font-bold select-none">·</span>
+                    <span>{formatDate(s.createdAt)}</span>
                     {s.lessonPlan && (
                       <>
-                        <span className="text-gray-600 text-xs">·</span>
-                        <span className="text-green-500 text-xs">✓ Plan ready</span>
+                        <span className="text-gray-700 font-bold select-none">·</span>
+                        <span className="text-green-500 font-semibold flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                          Plan ready
+                        </span>
                       </>
                     )}
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 ml-4 shrink-0 items-center">
+                <div className="flex flex-wrap gap-2 sm:ml-4 shrink-0 items-center w-full sm:w-auto justify-start sm:justify-end border-t border-gray-800/50 pt-3 sm:pt-0 sm:border-0">
                   {s.lessonPlan && (
                     <>
                       <button
                         onClick={() => router.push(`/lesson-plan/${s.id}`)}
-                        className="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-lg transition"
+                        className="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-medium flex-1 sm:flex-none text-center cursor-pointer"
                       >
                         View
                       </button>
                       <button
                         onClick={() => handleDownload(s.lessonPlan!.id)}
                         disabled={downloading === s.lessonPlan.id}
-                        className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs px-3 py-1.5 rounded-lg transition"
+                        className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-semibold flex-1 sm:flex-none text-center cursor-pointer"
                       >
                         {downloading === s.lessonPlan.id ? "..." : "⬇ DOCX"}
                       </button>
@@ -193,25 +197,25 @@ export default function DashboardPage() {
 
                   {/* Delete — inline confirmation */}
                   {confirmingDelete === s.id ? (
-                    <>
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto">
                       <button
                         onClick={() => handleDelete(s.id)}
                         disabled={deleting === s.id}
-                        className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs px-3 py-1.5 rounded-lg transition"
+                        className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs px-3 py-2 sm:py-1.5 rounded-lg transition flex-1 sm:flex-none text-center font-medium cursor-pointer"
                       >
-                        {deleting === s.id ? "Deleting..." : "Sure?"}
+                        {deleting === s.id ? "..." : "Confirm Delete?"}
                       </button>
                       <button
                         onClick={() => setConfirmingDelete(null)}
-                        className="text-gray-400 hover:text-white text-xs px-2 py-1.5 transition"
+                        className="text-gray-400 hover:text-white text-xs px-3 py-2 sm:py-1.5 transition font-medium cursor-pointer text-center"
                       >
                         Cancel
                       </button>
-                    </>
+                    </div>
                   ) : (
                     <button
                       onClick={() => setConfirmingDelete(s.id)}
-                      className="bg-gray-800 hover:bg-red-600 hover:text-white text-gray-400 text-xs px-3 py-1.5 rounded-lg transition"
+                      className="bg-gray-850 hover:bg-red-500/10 hover:text-red-400 text-gray-500 text-xs px-3 py-2 sm:py-1.5 rounded-lg transition flex-1 sm:flex-none text-center border border-transparent hover:border-red-500/10 font-medium cursor-pointer"
                     >
                       🗑 Delete
                     </button>
@@ -222,6 +226,8 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      <AppFooter />
     </div>
   );
 }
