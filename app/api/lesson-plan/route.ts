@@ -128,14 +128,20 @@ Return ONLY the JSON object. No markdown, no backticks, no code blocks, no extra
         const repaired = jsonrepair(raw);
         const structure = JSON.parse(repaired);
 
-        // Save lesson plan to DB
-        const lessonPlan = await prisma.lessonPlan.create({
-            data: {
-                structure,
-                userId: session.user.id,
-                sessionId,
-            },
-        });
+        // Save lesson plan to DB and update session planType
+        const [lessonPlan] = await prisma.$transaction([
+            prisma.lessonPlan.create({
+                data: {
+                    structure,
+                    userId: session.user.id,
+                    sessionId,
+                },
+            }),
+            prisma.session.update({
+                where: { id: sessionId },
+                data: { planType: isCourse ? "course" : "lesson" },
+            }),
+        ]);
 
         return NextResponse.json({ lessonPlan });
     } catch (error) {
