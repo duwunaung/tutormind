@@ -130,3 +130,28 @@ stdout | __tests__/ai-eval.test.ts
    Start at  22:01:05
    Duration  17.94s
 ```
+
+---
+
+## 📋 Changelog (v1.1.0 - v1.2.1)
+
+### 📄 Interactive Student Handouts & Worksheets (v1.2.0 - v1.2.1)
+* **A4 Paper Mockup View**: Adds an interactive preview styled like a physical A4 sheet of paper with metadata sections (Student Name, Date, Subject, Grade).
+* **Segmented Section Views**: Automatically parses AI responses into sub-tabs: *Student Handout* (Worksheet + Homework), *Worksheet Only*, *Homework Only*, *Tutor Answer Key* (with confidential warning header), and *Full View*.
+* **Print & Save to PDF**: Injects a custom `@media print` style block so clicking **"Print / Save PDF"** focuses solely on the worksheet page, hiding all header/sidebar navigation elements.
+* **Inline Copy Utilities**: Copies text matching the active tab only.
+* **Custom Markdown-to-HTML Renderer**: Styles all sub-sections, header tags, code blocks, lists, and bold text natively without bulky dependencies.
+
+### 🔄 Session Save & Resume Loop (v1.1.0 - v1.1.2)
+* **Save/Resume Flow**: Allows tutors to return to the interactive chat interface directly from any in-progress plan card on the dashboard.
+* **Interactive Section Generating**: Generates lesson plans immediately for individual sections from within the Course Plan outline.
+* **Bidirectionally Synced Renames**: Saving edits to course/lesson titles renames the plan and updates the corresponding chat session title simultaneously.
+
+### 📊 Dashboard & Auth Page Polish (v1.1.0)
+* **Widget Cleanup**: Removed non-functioning placeholder widgets to keep the workspace clean and focused on actual plans.
+* **Rebranding**: Standardized all tags and lists under **"Course Plans"**.
+
+### 🔐 Safety & State Verification (v1.1.0)
+* **Readiness Validation**: The "Generate" button is disabled until the AI has collected all required lesson variables and outputted the `[READY_TO_GENERATE]` token.
+* **Adversarial Resiliency**: Validated prompt injection safety in the E2E harness.
+* **Groq Migration**: Removed unused Gemini SDK dependencies and configuration settings.
