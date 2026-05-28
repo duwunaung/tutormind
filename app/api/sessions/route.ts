@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     
 
-    const { title, messages, subject } = body;
+    const { title, messages, subject, planType } = body;
 
     if (!title || !messages || !subject) {
       return NextResponse.json(
@@ -27,6 +27,7 @@ export async function POST(req: Request) {
         title,
         messages,
         subject,
+        planType: planType || "lesson",
         userId: session.user.id,
       },
     });

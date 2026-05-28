@@ -11,12 +11,19 @@ type LessonPlan = {
   blobUrl: string | null;
 };
 
+type ChatMessage = {
+  role: string;
+  content: string;
+  ready?: boolean;
+};
+
 type ChatSession = {
   id: string;
   title: string;
   subject: string;
   planType: string;
   createdAt: string;
+  messages: ChatMessage[];
   lessonPlan: LessonPlan | null;
 };
 
@@ -28,6 +35,7 @@ export default function DashboardPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<"all" | "plans" | "lessons" | "courses" | "in_progress">("all");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -105,12 +113,18 @@ export default function DashboardPage() {
   const totalPlans = sessions.filter((s) => s.lessonPlan).length;
   const totalCourses = sessions.filter((s) => s.lessonPlan && s.planType === "course").length;
   const totalLessons = sessions.filter((s) => s.lessonPlan && s.planType === "lesson").length;
+  const totalInProgress = totalSessions - totalPlans;
 
-  const userSubject = (session?.user as { subject?: string })?.subject || "General";
-  const userGrade = (session?.user as { gradeLevel?: string })?.gradeLevel || "All Levels";
+  const isReadyToGenerate = (s: ChatSession) => {
+    const msgs = s.messages;
+    if (!Array.isArray(msgs) || msgs.length === 0) return false;
+    if (msgs[0].role === "user") return true; // Wizard session
+    return msgs.some((m) => m.role === "assistant" && m.ready === true);
+  };
 
   const stats = [
     {
+      id: "plans" as const,
       title: "Plans Generated",
       value: totalPlans,
       desc: `${totalLessons} Lessons · ${totalCourses} Courses`,
@@ -118,27 +132,23 @@ export default function DashboardPage() {
       icon: "✨",
     },
     {
+      id: "all" as const,
       title: "Chat Sessions",
       value: totalSessions,
       desc: "Total planning history",
       color: "text-blue-400 border-blue-500/20 bg-blue-500/5",
       icon: "💬",
     },
-    {
-      title: "Saved Courses",
-      value: totalCourses,
-      desc: "Curriculums generated",
-      color: "text-indigo-400 border-indigo-500/20 bg-indigo-500/5",
-      icon: "📘",
-    },
-    {
-      title: "Tutor Specialty",
-      value: userSubject,
-      desc: userGrade,
-      color: "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
-      icon: "🎓",
-    },
   ];
+
+  const filteredSessions = sessions.filter((s) => {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "plans") return s.lessonPlan !== null;
+    if (activeFilter === "lessons") return s.planType === "lesson" && s.lessonPlan !== null;
+    if (activeFilter === "courses") return s.planType === "course" && s.lessonPlan !== null;
+    if (activeFilter === "in_progress") return s.lessonPlan === null;
+    return true;
+  });
 
   if (status === "loading" || loading) {
     return (
@@ -175,11 +185,16 @@ export default function DashboardPage() {
         </div>
 
         {/* Tutor Analytics Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat, idx) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          {stats.map((stat) => (
             <div
-              key={idx}
-              className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex flex-col justify-between h-28 hover:border-gray-700 transition duration-200 select-none"
+              key={stat.id}
+              onClick={() => setActiveFilter(stat.id)}
+              className={`border rounded-xl px-5 py-4 flex flex-col justify-between h-28 transition duration-250 select-none cursor-pointer ${
+                activeFilter === stat.id
+                  ? "bg-gray-900 border-blue-500 shadow-md shadow-blue-500/5 ring-1 ring-blue-500/20"
+                  : "bg-gray-900 border-gray-800 hover:border-gray-700"
+              }`}
             >
               <div className="flex justify-between items-start">
                 <span className="text-gray-400 text-xs font-semibold">{stat.title}</span>
@@ -199,7 +214,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Sessions List */}
+        {/* Sessions List Container */}
         {sessions.length === 0 ? (
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 sm:p-12 text-center flex-1 flex flex-col items-center justify-center min-h-[300px]">
             <p className="text-4xl mb-4 select-none">📚</p>
@@ -215,88 +230,172 @@ export default function DashboardPage() {
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
-            {sessions.map((s) => (
-              <div
-                key={s.id}
-                className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-gray-700 transition gap-4"
+          <div className="flex flex-col flex-1">
+            {/* Filter Tabs Row */}
+            <div className="flex border-b border-gray-800 mb-6 text-sm gap-2 select-none overflow-x-auto pb-1 scrollbar-none">
+              <button
+                onClick={() => setActiveFilter("all")}
+                className={`pb-3 px-3.5 font-semibold border-b-2 transition duration-200 cursor-pointer whitespace-nowrap ${
+                  activeFilter === "all"
+                    ? "border-blue-500 text-white"
+                    : "border-transparent text-gray-500 hover:text-gray-300"
+                }`}
               >
-                {/* Session Info */}
-                <div className="flex-1 min-w-0 w-full">
-                  <div className="flex items-center gap-2 mb-1.5 min-w-0">
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide border shrink-0 uppercase ${
-                      s.planType === "course"
-                        ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
-                        : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                    }`}>
-                      {s.planType === "course" ? "📚 Course" : "📝 Lesson"}
-                    </span>
-                    <p className="text-white text-sm font-semibold truncate flex-1" title={s.title}>{s.title}</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
-                    <span>{s.subject}</span>
-                    <span className="text-gray-700 font-bold select-none">·</span>
-                    <span>{formatDate(s.createdAt)}</span>
-                    {s.lessonPlan && (
-                      <>
-                        <span className="text-gray-700 font-bold select-none">·</span>
-                        <span className="text-green-500 font-semibold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                          Plan ready
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
+                💬 All Sessions ({totalSessions})
+              </button>
+              <button
+                onClick={() => setActiveFilter("lessons")}
+                className={`pb-3 px-3.5 font-semibold border-b-2 transition duration-200 cursor-pointer whitespace-nowrap ${
+                  activeFilter === "lessons"
+                    ? "border-emerald-500 text-white"
+                    : "border-transparent text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                📝 Lesson Plans ({totalLessons})
+              </button>
+              <button
+                onClick={() => setActiveFilter("courses")}
+                className={`pb-3 px-3.5 font-semibold border-b-2 transition duration-200 cursor-pointer whitespace-nowrap ${
+                  activeFilter === "courses"
+                    ? "border-indigo-500 text-white"
+                    : "border-transparent text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                📘 Course Plans ({totalCourses})
+              </button>
+              <button
+                onClick={() => setActiveFilter("in_progress")}
+                className={`pb-3 px-3.5 font-semibold border-b-2 transition duration-200 cursor-pointer whitespace-nowrap ${
+                  activeFilter === "in_progress"
+                    ? "border-yellow-500 text-white"
+                    : "border-transparent text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                ⏳ In Progress ({totalInProgress})
+              </button>
+            </div>
 
-                {/* Actions */}
-                <div className="flex flex-wrap gap-2 sm:ml-4 shrink-0 items-center w-full sm:w-auto justify-start sm:justify-end border-t border-gray-800/50 pt-3 sm:pt-0 sm:border-0">
-                  {s.lessonPlan && (
-                    <>
-                      <button
-                        onClick={() => router.push(`/lesson-plan/${s.id}`)}
-                        className="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-medium flex-1 sm:flex-none text-center cursor-pointer"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleDownload(s.lessonPlan!.id)}
-                        disabled={downloading === s.lessonPlan.id}
-                        className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-semibold flex-1 sm:flex-none text-center cursor-pointer"
-                      >
-                        {downloading === s.lessonPlan.id ? "..." : "⬇ DOCX"}
-                      </button>
-                    </>
-                  )}
-
-                  {/* Delete — inline confirmation */}
-                  {confirmingDelete === s.id ? (
-                    <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                      <button
-                        onClick={() => handleDelete(s.id)}
-                        disabled={deleting === s.id}
-                        className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs px-3 py-2 sm:py-1.5 rounded-lg transition flex-1 sm:flex-none text-center font-medium cursor-pointer"
-                      >
-                        {deleting === s.id ? "..." : "Confirm Delete?"}
-                      </button>
-                      <button
-                        onClick={() => setConfirmingDelete(null)}
-                        className="text-gray-400 hover:text-white text-xs px-3 py-2 sm:py-1.5 transition font-medium cursor-pointer text-center"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmingDelete(s.id)}
-                      className="bg-gray-850 hover:bg-red-500/10 hover:text-red-400 text-gray-500 text-xs px-3 py-2 sm:py-1.5 rounded-lg transition flex-1 sm:flex-none text-center border border-transparent hover:border-red-500/10 font-medium cursor-pointer"
-                    >
-                      🗑 Delete
-                    </button>
-                  )}
-                </div>
+            {/* Filtered Content */}
+            {filteredSessions.length === 0 ? (
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 sm:p-12 text-center flex-1 flex flex-col items-center justify-center min-h-[220px]">
+                <p className="text-3xl mb-3 select-none">🔍</p>
+                <p className="text-white font-semibold mb-1">
+                  {activeFilter === "plans" && "No plans generated yet"}
+                  {activeFilter === "lessons" && "No lesson plans found"}
+                  {activeFilter === "courses" && "No course plans found"}
+                  {activeFilter === "in_progress" && "No sessions in progress"}
+                </p>
+                <p className="text-gray-400 text-xs max-w-sm mb-4">
+                  {activeFilter === "plans" && "Start planning a lesson or course to generate documents here."}
+                  {activeFilter === "lessons" && "Go to 'New Plan' and complete a lesson plan chat session to save it."}
+                  {activeFilter === "courses" && "Go to 'New Plan' and complete a course plan chat session to save it."}
+                  {activeFilter === "in_progress" && "All your active chats have completed plans generated."}
+                </p>
               </div>
-            ))}
+            ) : (
+              <div className="space-y-3">
+                {filteredSessions.map((s) => (
+                  <div
+                    key={s.id}
+                    className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between hover:border-gray-700 transition gap-4"
+                  >
+                    {/* Session Info */}
+                    <div className="flex-1 min-w-0 w-full">
+                      <div className="flex items-center gap-2 mb-1.5 min-w-0">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide border shrink-0 uppercase ${
+                          s.planType === "course"
+                            ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                            : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        }`}>
+                          {s.planType === "course" ? "📚 Course" : "📝 Lesson"}
+                        </span>
+                        <p className="text-white text-sm font-semibold truncate flex-1" title={s.title}>{s.title}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
+                        <span>{s.subject}</span>
+                        <span className="text-gray-700 font-bold select-none">·</span>
+                        <span>{formatDate(s.createdAt)}</span>
+                        {s.lessonPlan && (
+                          <>
+                            <span className="text-gray-700 font-bold select-none">·</span>
+                            <span className="text-green-500 font-semibold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                              Plan ready
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-2 sm:ml-4 shrink-0 items-center w-full sm:w-auto justify-start sm:justify-end border-t border-gray-800/50 pt-3 sm:pt-0 sm:border-0">
+                      {s.lessonPlan && (
+                        <>
+                          <button
+                            onClick={() => router.push(`/lesson-plan/${s.id}`)}
+                            className="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-medium flex-1 sm:flex-none text-center cursor-pointer"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => handleDownload(s.lessonPlan!.id)}
+                            disabled={downloading === s.lessonPlan.id}
+                            className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-semibold flex-1 sm:flex-none text-center cursor-pointer"
+                          >
+                            {downloading === s.lessonPlan.id ? "..." : "⬇ DOCX"}
+                          </button>
+                        </>
+                      )}
+
+                      {!s.lessonPlan && (
+                        <>
+                          {isReadyToGenerate(s) && (
+                            <button
+                              onClick={() => router.push(`/lesson-plan/${s.id}`)}
+                              className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-semibold flex-1 sm:flex-none text-center cursor-pointer"
+                            >
+                              ⚡ Generate Plan
+                            </button>
+                          )}
+                          <button
+                            onClick={() => router.push(`/chat?session=${s.id}`)}
+                            className="bg-yellow-600/10 hover:bg-yellow-600/20 text-yellow-400 text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-semibold flex-1 sm:flex-none text-center cursor-pointer"
+                          >
+                            💬 Chat
+                          </button>
+                        </>
+                      )}
+
+                      {/* Delete — inline confirmation */}
+                      {confirmingDelete === s.id ? (
+                        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                          <button
+                            onClick={() => handleDelete(s.id)}
+                            disabled={deleting === s.id}
+                            className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs px-3 py-2 sm:py-1.5 rounded-lg transition flex-1 sm:flex-none text-center font-medium cursor-pointer"
+                          >
+                            {deleting === s.id ? "..." : "Confirm"}
+                          </button>
+                          <button
+                            onClick={() => setConfirmingDelete(null)}
+                            className="text-gray-400 hover:text-white text-xs px-3 py-2 sm:py-1.5 transition font-medium cursor-pointer text-center"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmingDelete(s.id)}
+                          className="bg-gray-850 hover:bg-red-500/10 hover:text-red-400 text-gray-500 text-xs px-3 py-2 sm:py-1.5 rounded-lg transition flex-1 sm:flex-none text-center border border-transparent hover:border-red-500/10 font-medium cursor-pointer"
+                        >
+                          🗑 Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -58,6 +58,48 @@ export default function LessonPlanPage() {
   const [refining, setRefining] = useState(false);
   const [refineError, setRefineError] = useState("");
 
+  const [generatingSection, setGeneratingSection] = useState<number | null>(null);
+
+  const handleGenerateSectionPlan = async (section: Section) => {
+    if (generatingSection !== null) return;
+    setGeneratingSection(section.sectionNumber);
+
+    try {
+      const prompt = `Create a detailed lesson plan based on Section ${section.sectionNumber} of the course '${lessonPlan?.title}'.
+
+Section Details:
+- Title: ${section.title}
+- Duration: ${section.duration}
+- Description: ${section.description}
+- Objectives: ${section.objectives?.join(", ") || ""}
+- Activities: ${section.activities || ""}
+- Assessment: ${section.assessment || ""}`;
+
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `Lesson Plan: ${section.title}`,
+          messages: [{ role: "user", content: prompt }],
+          subject: lessonPlan?.subject,
+          planType: "lesson",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.sessionId) {
+        router.push(`/lesson-plan/${data.sessionId}`);
+      } else {
+        alert(data.error || "Failed to initialize lesson plan for this section.");
+      }
+    } catch (err) {
+      console.error("Section generation init error:", err);
+      alert("Something went wrong.");
+    } finally {
+      setGeneratingSection(null);
+    }
+  };
+
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
@@ -317,14 +359,13 @@ export default function LessonPlanPage() {
             </Section>
 
             {/* COURSE: Sections */}
-            {/* COURSE: Sections */}
             {lessonPlan.type === "course" && (
               <Section title={`📂 Course Sections (${lessonPlan.sections?.length || 0})`}>
                 <div className="space-y-3">
                   {lessonPlan.sections?.map((s, i) => (
                     <div
                       key={i}
-                      className="bg-gray-800 border border-gray-700 rounded-xl p-4"
+                      className="bg-gray-800 border border-gray-700 rounded-xl p-4 hover:border-blue-500/30 transition duration-200"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -355,6 +396,24 @@ export default function LessonPlanPage() {
                           ))}
                         </div>
                       )}
+                      <div className="mt-3 flex justify-end border-t border-gray-700/50 pt-3">
+                        <button
+                          onClick={() => handleGenerateSectionPlan(s)}
+                          disabled={generatingSection !== null}
+                          className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs px-3 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          {generatingSection === s.sectionNumber ? (
+                            <>
+                              <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                              Preparing...
+                            </>
+                          ) : (
+                            <>
+                              <span>⚡</span> Generate Lesson Plan
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

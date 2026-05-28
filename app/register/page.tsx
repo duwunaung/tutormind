@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 const DEFAULT_SUBJECTS = ["Math", "Science", "English / Language Arts", "History", "Software Engineering"];
 const GRADE_LEVELS = [
@@ -75,10 +76,23 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-md p-8">
-        <h1 className="text-2xl font-bold text-white mb-1">Create your account</h1>
-        <p className="text-gray-400 text-sm mb-6">Start planning better lessons with AI</p>
+    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4 py-8">
+      {/* Branding and Logo Header */}
+      <div className="flex flex-col items-center mb-6 select-none text-center">
+        <Image
+          src="/apple-icon.png"
+          alt="TutorMind Logo"
+          width={64}
+          height={64}
+          className="rounded-2xl shadow-lg shadow-blue-500/10 mb-3.5 border border-gray-800"
+        />
+        <h2 className="text-2xl font-bold text-white tracking-tight">TutorMind</h2>
+        <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-wider font-semibold">AI-Powered Tutoring Assistant</p>
+      </div>
+
+      <div className="bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-md p-8 shadow-xl">
+        <h1 className="text-xl font-bold text-white mb-1">Create your account</h1>
+        <p className="text-gray-400 text-xs mb-6 font-medium">Start planning better lessons with AI</p>
 
         {error && (
           <div className="bg-red-500/10 text-red-400 text-sm rounded-lg p-3 mb-4 border border-red-500/20">
@@ -88,37 +102,37 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Full Name</label>
+            <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Full Name</label>
             <input
               type="text"
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Jane Smith"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+            <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Email</label>
             <input
               type="email"
               required
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="jane@email.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
+            <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Password</label>
             <input
               type="password"
               required
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter strong password"
             />
             {form.password && (
@@ -144,12 +158,12 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Subject</label>
+            <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Subject</label>
             <select
               required
               value={form.subject}
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
             >
               <option value="" className="text-gray-500">Select a subject</option>
               {subjectsList.map((s) => (
@@ -159,12 +173,12 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Grade Level</label>
+            <label className="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Grade Level</label>
             <select
               required
               value={form.gradeLevel}
               onChange={(e) => setForm({ ...form, gradeLevel: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
             >
               <option value="" className="text-gray-500">Select grade level</option>
               {GRADE_LEVELS.map((g) => (
@@ -176,15 +190,15 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg py-2 text-sm transition disabled:opacity-50"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl py-2.5 text-sm transition duration-200 cursor-pointer shadow-lg shadow-blue-600/15 disabled:opacity-50 mt-2"
           >
             {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-500 mt-6 font-medium">
           Already have an account?{" "}
-          <Link href="/login" className="text-blue-400 hover:text-blue-300">Sign in</Link>
+          <Link href="/login" className="text-blue-400 hover:text-blue-300 transition">Sign in</Link>
         </p>
       </div>
     </div>
