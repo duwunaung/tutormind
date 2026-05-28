@@ -139,7 +139,48 @@ Section Details:
 
   const [generatingWorksheet, setGeneratingWorksheet] = useState(false);
   const [activeTab, setActiveTab] = useState<"plan" | "worksheet">("plan");
-  const [copyStatus, setCopyStatus] = useState<"none" | "student" | "answers" | "full">("none");
+  const [worksheetSubTab, setWorksheetSubTab] = useState<"handout" | "worksheet" | "homework" | "answerKey" | "full">("handout");
+  const [copyStatus, setCopyStatus] = useState<"none" | "handout" | "worksheet" | "homework" | "answerKey" | "full">("none");
+
+  const parseWorksheetContent = (text: string) => {
+    if (!text) return { worksheet: "", homework: "", answerKey: "", full: "" };
+
+    const content = text.replace(/\r\n/g, "\n");
+    const homeworkMarker = "# Student Homework:";
+    const keyMarker = "# Tutor Answer Key";
+
+    let worksheet = "";
+    let homework = "";
+    let answerKey = "";
+
+    const homeworkIdx = content.indexOf(homeworkMarker);
+    const keyIdx = content.indexOf(keyMarker);
+
+    if (homeworkIdx !== -1 && keyIdx !== -1) {
+      worksheet = content.slice(0, homeworkIdx).trim();
+      homework = content.slice(homeworkIdx, keyIdx).trim();
+      answerKey = content.slice(keyIdx).trim();
+    } else if (homeworkIdx !== -1) {
+      worksheet = content.slice(0, homeworkIdx).trim();
+      homework = content.slice(homeworkIdx).trim();
+    } else if (keyIdx !== -1) {
+      worksheet = content.slice(0, keyIdx).trim();
+      answerKey = content.slice(keyIdx).trim();
+    } else {
+      worksheet = content.trim();
+    }
+
+    const cleanSection = (sec: string) => {
+      return sec.replace(/\n\s*---\s*$/, "").trim();
+    };
+
+    return {
+      worksheet: cleanSection(worksheet),
+      homework: cleanSection(homework),
+      answerKey: cleanSection(answerKey),
+      full: content.trim(),
+    };
+  };
 
   const handleGenerateWorksheet = async () => {
     if (!lessonPlanId || generatingWorksheet) return;
@@ -163,24 +204,23 @@ Section Details:
     }
   };
 
-  const handleCopyText = (type: "student" | "answers" | "full") => {
+  const handleCopyText = (type: "handout" | "worksheet" | "homework" | "answerKey" | "full") => {
     const rawWorksheet = lessonPlan?.worksheet || "";
     if (!rawWorksheet) return;
 
-    let textToCopy = rawWorksheet;
-    const keyMarker = "# Tutor Answer Key";
-    const markerIndex = rawWorksheet.toLowerCase().indexOf(keyMarker.toLowerCase());
+    const parsed = parseWorksheetContent(rawWorksheet);
+    let textToCopy = "";
 
-    if (type === "student") {
-      if (markerIndex !== -1) {
-        textToCopy = rawWorksheet.substring(0, markerIndex).trim();
-      }
-    } else if (type === "answers") {
-      if (markerIndex !== -1) {
-        textToCopy = rawWorksheet.substring(markerIndex).trim();
-      } else {
-        textToCopy = "Answer Key not found.";
-      }
+    if (type === "handout") {
+      textToCopy = `${parsed.worksheet}\n\n${parsed.homework}`.trim();
+    } else if (type === "worksheet") {
+      textToCopy = parsed.worksheet;
+    } else if (type === "homework") {
+      textToCopy = parsed.homework;
+    } else if (type === "answerKey") {
+      textToCopy = parsed.answerKey;
+    } else {
+      textToCopy = parsed.full;
     }
 
     navigator.clipboard.writeText(textToCopy);
@@ -670,42 +710,210 @@ Section Details:
             )}
 
             {/* Render Worksheet Content */}
-            {activeTab === "worksheet" && lessonPlan.worksheet && (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                {/* Worksheet Header / Actions */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 pb-4">
-                  <div>
-                    <h3 className="text-white font-bold text-sm">Printable Handouts & Homework</h3>
-                    <p className="text-gray-500 text-[10px]">Print or copy segments directly for your student</p>
+            {activeTab === "worksheet" && lessonPlan.worksheet && (() => {
+              const parsedWorksheet = parseWorksheetContent(lessonPlan.worksheet);
+              return (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  {/* Worksheet Sub-tabs (interactive layout) */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-800 pb-3 no-print select-none">
+                    <div className="flex flex-wrap gap-1 bg-gray-950/45 p-1 rounded-xl border border-gray-800/80">
+                      <button
+                        onClick={() => setWorksheetSubTab("handout")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                          worksheetSubTab === "handout"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/10"
+                            : "text-gray-400 hover:text-gray-200"
+                        }`}
+                      >
+                        📄 Student Handout
+                      </button>
+                      <button
+                        onClick={() => setWorksheetSubTab("worksheet")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                          worksheetSubTab === "worksheet"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/10"
+                            : "text-gray-400 hover:text-gray-200"
+                        }`}
+                      >
+                        📖 Worksheet Only
+                      </button>
+                      <button
+                        onClick={() => setWorksheetSubTab("homework")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                          worksheetSubTab === "homework"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/10"
+                            : "text-gray-400 hover:text-gray-200"
+                        }`}
+                      >
+                        🏠 Homework Only
+                      </button>
+                      <button
+                        onClick={() => setWorksheetSubTab("answerKey")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                          worksheetSubTab === "answerKey"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/10"
+                            : "text-gray-400 hover:text-gray-200"
+                        }`}
+                      >
+                        🔑 Answer Key
+                      </button>
+                      <button
+                        onClick={() => setWorksheetSubTab("full")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                          worksheetSubTab === "full"
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/10"
+                            : "text-gray-400 hover:text-gray-200"
+                        }`}
+                      >
+                        📑 Full View
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCopyText(worksheetSubTab)}
+                        className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs px-3.5 py-2 rounded-xl transition font-semibold cursor-pointer flex items-center gap-1.5"
+                      >
+                        📋 {copyStatus === worksheetSubTab ? "Copied! ✓" : "Copy Current"}
+                      </button>
+                      <button
+                        onClick={() => window.print()}
+                        className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-blue-600/10"
+                      >
+                        🖨️ Print / Save PDF
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleCopyText("student")}
-                      className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs px-3.5 py-1.5 rounded-lg transition font-semibold cursor-pointer"
-                    >
-                      {copyStatus === "student" ? "Copied! ✓" : "📋 Copy Handout"}
-                    </button>
-                    <button
-                      onClick={() => handleCopyText("answers")}
-                      className="bg-green-600/10 hover:bg-green-600/20 text-green-400 text-xs px-3.5 py-1.5 rounded-lg transition font-semibold cursor-pointer"
-                    >
-                      {copyStatus === "answers" ? "Copied! ✓" : "🔑 Copy Answer Key"}
-                    </button>
-                    <button
-                      onClick={() => handleCopyText("full")}
-                      className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-3.5 py-1.5 rounded-lg border border-gray-700 transition font-semibold cursor-pointer"
-                    >
-                      {copyStatus === "full" ? "Copied! ✓" : "📄 Copy Full"}
-                    </button>
-                  </div>
-                </div>
 
-                {/* Worksheet Body */}
-                <div className="bg-gray-950/40 border border-gray-800/80 rounded-2xl p-6 font-sans text-sm text-gray-300 leading-relaxed whitespace-pre-wrap select-text selection:bg-blue-500/30 overflow-x-auto max-h-[600px] scrollbar-thin">
-                  {lessonPlan.worksheet}
+                  {/* A4 Paper Document mockup */}
+                  <div
+                    id="printable-worksheet"
+                    className="bg-white text-gray-900 border border-gray-200/80 shadow-2xl p-8 md:p-14 max-w-[850px] mx-auto rounded-2xl min-h-[1100px] relative font-sans select-text"
+                  >
+                    {/* Style injection for printing (hides other dashboard UI elements) */}
+                    <style dangerouslySetInnerHTML={{__html: `
+                      @media print {
+                        body {
+                          background: white !important;
+                          color: black !important;
+                        }
+                        /* Hide all page content by default */
+                        body * {
+                          visibility: hidden;
+                        }
+                        /* Only display the printable sheet container and its descendants */
+                        #printable-worksheet, #printable-worksheet * {
+                          visibility: visible;
+                        }
+                        #printable-worksheet {
+                          position: absolute;
+                          left: 0;
+                          top: 0;
+                          width: 100% !important;
+                          max-width: 100% !important;
+                          padding: 1.5cm !important;
+                          margin: 0 !important;
+                          box-shadow: none !important;
+                          border: none !important;
+                          background: white !important;
+                          color: black !important;
+                        }
+                        .no-print {
+                          display: none !important;
+                        }
+                        .page-break {
+                          page-break-before: always !important;
+                          break-before: page !important;
+                        }
+                      }
+                    `}} />
+
+                    {/* Header Banner - print and screen-friendly layout */}
+                    <div className="border-b-2 border-gray-900 pb-5 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                      <div>
+                        <span className="text-[10px] font-extrabold tracking-widest text-blue-600 uppercase">TutorMind Handout Series</span>
+                        <h2 className="text-2xl font-black text-gray-900 mt-1 tracking-tight leading-tight">{lessonPlan.title}</h2>
+                      </div>
+                      <div className="text-left md:text-right text-xs text-gray-500 font-medium">
+                        <div>Subject: <span className="font-semibold text-gray-800">{lessonPlan.subject}</span></div>
+                        <div>Level: <span className="font-semibold text-gray-800">{lessonPlan.gradeLevel}</span></div>
+                      </div>
+                    </div>
+
+                    {/* Confidential Warning Alert for Tutor Answer Key */}
+                    {worksheetSubTab === "answerKey" && (
+                      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl mb-8 flex items-center gap-3">
+                        <span className="text-xl">🔐</span>
+                        <div>
+                          <h4 className="text-red-900 font-extrabold text-xs uppercase tracking-wider">Confidential Answer Key</h4>
+                          <p className="text-red-750 text-xs mt-0.5 font-medium">For tutor grading use only. Do not distribute to students.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Student Metadata box - hidden for Answer Key */}
+                    {worksheetSubTab !== "answerKey" && (
+                      <div className="grid grid-cols-2 gap-6 border border-gray-200/80 rounded-xl p-4 bg-gray-50/50 mb-8 text-xs text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-700 whitespace-nowrap">Student Name:</span>
+                          <div className="flex-1 border-b border-gray-300 h-4 border-dashed" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-700 whitespace-nowrap">Date:</span>
+                          <div className="flex-1 border-b border-gray-300 h-4 border-dashed" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Worksheet body rendering based on sub-tab */}
+                    <div className="prose prose-slate max-w-none">
+                      {worksheetSubTab === "handout" && (
+                        <div className="space-y-12">
+                          <div>
+                            <MarkdownRenderer content={parsedWorksheet.worksheet} />
+                          </div>
+                          <div className="border-t border-dashed border-gray-300 pt-8 mt-8 page-break no-print" />
+                          <div className="page-break" />
+                          <div>
+                            <MarkdownRenderer content={parsedWorksheet.homework} />
+                          </div>
+                        </div>
+                      )}
+
+                      {worksheetSubTab === "worksheet" && (
+                        <MarkdownRenderer content={parsedWorksheet.worksheet} />
+                      )}
+
+                      {worksheetSubTab === "homework" && (
+                        <MarkdownRenderer content={parsedWorksheet.homework} />
+                      )}
+
+                      {worksheetSubTab === "answerKey" && (
+                        <MarkdownRenderer content={parsedWorksheet.answerKey} />
+                      )}
+
+                      {worksheetSubTab === "full" && (
+                        <div className="space-y-12">
+                          <div>
+                            <MarkdownRenderer content={parsedWorksheet.worksheet} />
+                          </div>
+                          <div className="border-t border-dashed border-gray-300 pt-8 mt-8 page-break" />
+                          <div>
+                            <MarkdownRenderer content={parsedWorksheet.homework} />
+                          </div>
+                          <div className="border-t border-dashed border-gray-300 pt-8 mt-8 page-break" />
+                          <div className="bg-red-50/20 p-4 rounded-xl border border-red-100 mb-6 no-print">
+                            <span className="text-red-700 font-bold text-xs uppercase tracking-wider">Answer Key Section Below</span>
+                          </div>
+                          <div>
+                            <MarkdownRenderer content={parsedWorksheet.answerKey} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
           </div>
         </div>
@@ -758,4 +966,168 @@ function StructureBlock({
       <p className="text-gray-300 text-sm">{description}</p>
     </div>
   );
+}
+
+function MarkdownRenderer({ content }: { content: string }) {
+  if (!content) return null;
+
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const elements: React.ReactNode[] = [];
+  
+  let currentParagraph: string[] = [];
+  let currentList: string[] = [];
+  let inCodeBlock = false;
+  let codeBlockLines: string[] = [];
+
+  const flushParagraph = (key: string) => {
+    if (currentParagraph.length > 0) {
+      const text = currentParagraph.join(" ");
+      elements.push(
+        <p key={key} className="mb-4 text-gray-800 leading-relaxed text-sm select-text">
+          {parseInlineFormatting(text)}
+        </p>
+      );
+      currentParagraph = [];
+    }
+  };
+
+  const flushList = (key: string) => {
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key={key} className="list-disc pl-5 mb-4 space-y-2">
+          {currentList.map((item, idx) => (
+            <li key={idx} className="text-gray-800 text-sm leading-relaxed select-text">
+              {parseInlineFormatting(item)}
+            </li>
+          ))}
+        </ul>
+      );
+      currentList = [];
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("```")) {
+      if (inCodeBlock) {
+        const codeText = codeBlockLines.join("\n");
+        elements.push(
+          <div key={`code-${i}`} className="bg-gray-900 border border-gray-800 rounded-xl p-4 my-4 font-mono text-xs text-gray-200 overflow-x-auto whitespace-pre select-all">
+            {codeText}
+          </div>
+        );
+        inCodeBlock = false;
+        codeBlockLines = [];
+      } else {
+        flushParagraph(`p-before-code-${i}`);
+        flushList(`l-before-code-${i}`);
+        inCodeBlock = true;
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBlockLines.push(line);
+      continue;
+    }
+
+    if (trimmed === "---" || trimmed === "***") {
+      flushParagraph(`p-before-hr-${i}`);
+      flushList(`l-before-hr-${i}`);
+      elements.push(<hr key={`hr-${i}`} className="my-6 border-gray-200" />);
+      continue;
+    }
+
+    if (trimmed.startsWith("# ")) {
+      flushParagraph(`p-before-h1-${i}`);
+      flushList(`l-before-h1-${i}`);
+      elements.push(
+        <h1 key={`h1-${i}`} className="text-2xl font-black text-gray-900 tracking-tight border-b-2 border-gray-150 pb-2 mt-8 mb-4 first:mt-2 select-text">
+          {trimmed.substring(2)}
+        </h1>
+      );
+      continue;
+    }
+    if (trimmed.startsWith("## ")) {
+      flushParagraph(`p-before-h2-${i}`);
+      flushList(`l-before-h2-${i}`);
+      elements.push(
+        <h2 key={`h2-${i}`} className="text-xl font-bold text-gray-800 mt-6 mb-3 select-text">
+          {trimmed.substring(3)}
+        </h2>
+      );
+      continue;
+    }
+    if (trimmed.startsWith("### ")) {
+      flushParagraph(`p-before-h3-${i}`);
+      flushList(`l-before-h3-${i}`);
+      elements.push(
+        <h3 key={`h3-${i}`} className="text-lg font-bold text-gray-700 mt-5 mb-2 select-text">
+          {trimmed.substring(4)}
+        </h3>
+      );
+      continue;
+    }
+
+    if (trimmed.startsWith("> ")) {
+      flushParagraph(`p-before-bq-${i}`);
+      flushList(`l-before-bq-${i}`);
+      elements.push(
+        <blockquote key={`bq-${i}`} className="border-l-4 border-blue-500 pl-4 py-1 italic text-gray-650 bg-blue-50/20 my-4 rounded-r-md select-text">
+          {parseInlineFormatting(line.substring(2))}
+        </blockquote>
+      );
+      continue;
+    }
+
+    if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
+      flushParagraph(`p-before-li-${i}`);
+      currentList.push(trimmed.substring(2));
+      continue;
+    }
+
+    if (trimmed === "") {
+      flushParagraph(`p-blank-${i}`);
+      flushList(`l-blank-${i}`);
+      continue;
+    }
+
+    flushList(`l-para-${i}`);
+    currentParagraph.push(line);
+  }
+
+  flushParagraph("p-final");
+  flushList("l-final");
+
+  return <div className="space-y-1">{elements}</div>;
+}
+
+function parseInlineFormatting(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`)/g;
+  const splitParts = text.split(regex);
+
+  splitParts.forEach((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      parts.push(
+        <strong key={index} className="font-semibold text-gray-900 bg-blue-50 px-1 py-0.5 rounded text-xs select-text">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    } else if (part.startsWith("*") && part.endsWith("*")) {
+      parts.push(<em key={index} className="italic select-text">{part.slice(1, -1)}</em>);
+    } else if (part.startsWith("`") && part.endsWith("`")) {
+      parts.push(
+        <code key={index} className="bg-gray-100 text-red-650 font-mono text-xs px-1.5 py-0.5 rounded border border-gray-200 select-all">
+          {part.slice(1, -1)}
+        </code>
+      );
+    } else {
+      parts.push(<span key={index} className="select-text">{part}</span>);
+    }
+  });
+
+  return parts;
 }
