@@ -57,10 +57,16 @@ export async function POST(req: Request) {
             .join("\n\n");
 
         // Detect if this is a course plan or single lesson
-        const isCourse =
-            chatHistory.toLowerCase().includes("course") ||
-            chatHistory.toLowerCase().includes("sections") ||
-            chatHistory.toLowerCase().includes("curriculum");
+        let isCourse = chatSession.planType === "course";
+
+        // Fallback to chat history parsing only if planType is the default "lesson" AND it was a chat flow (starts with assistant message)
+        const isChatFlow = Array.isArray(messages) && messages.length > 0 && messages[0].role === "assistant";
+        if (isChatFlow && chatSession.planType === "lesson") {
+            isCourse =
+                chatHistory.toLowerCase().includes("course") ||
+                chatHistory.toLowerCase().includes("sections") ||
+                chatHistory.toLowerCase().includes("curriculum");
+        }
 
         const prompt = isCourse
             ? `Based on this tutoring chat session, generate a full course plan.

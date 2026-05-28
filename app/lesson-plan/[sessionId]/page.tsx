@@ -82,6 +82,7 @@ Section Details:
           title: `Lesson Plan: ${section.title}`,
           messages: [{ role: "user", content: prompt }],
           subject: lessonPlan?.subject,
+          planType: "lesson",
         }),
       });
 
