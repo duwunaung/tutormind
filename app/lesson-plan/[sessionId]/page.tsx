@@ -38,6 +38,7 @@ type LessonPlan = {
   objectives: string[];
   materials: string[];
   notes: string;
+  worksheet?: string;
 };
 
 export default function LessonPlanPage() {
@@ -134,6 +135,57 @@ Section Details:
     } finally {
       setGeneratingSection(null);
     }
+  };
+
+  const [generatingWorksheet, setGeneratingWorksheet] = useState(false);
+  const [activeTab, setActiveTab] = useState<"plan" | "worksheet">("plan");
+  const [copyStatus, setCopyStatus] = useState<"none" | "student" | "answers" | "full">("none");
+
+  const handleGenerateWorksheet = async () => {
+    if (!lessonPlanId || generatingWorksheet) return;
+    setGeneratingWorksheet(true);
+    try {
+      const res = await fetch(`/api/lesson-plan/${lessonPlanId}/worksheet`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to generate worksheet.");
+        return;
+      }
+      setLessonPlan(data.lessonPlan.structure);
+      setActiveTab("worksheet");
+    } catch (err) {
+      console.error("Worksheet generation error:", err);
+      alert("Something went wrong.");
+    } finally {
+      setGeneratingWorksheet(false);
+    }
+  };
+
+  const handleCopyText = (type: "student" | "answers" | "full") => {
+    const rawWorksheet = lessonPlan?.worksheet || "";
+    if (!rawWorksheet) return;
+
+    let textToCopy = rawWorksheet;
+    const keyMarker = "# Tutor Answer Key";
+    const markerIndex = rawWorksheet.toLowerCase().indexOf(keyMarker.toLowerCase());
+
+    if (type === "student") {
+      if (markerIndex !== -1) {
+        textToCopy = rawWorksheet.substring(0, markerIndex).trim();
+      }
+    } else if (type === "answers") {
+      if (markerIndex !== -1) {
+        textToCopy = rawWorksheet.substring(markerIndex).trim();
+      } else {
+        textToCopy = "Answer Key not found.";
+      }
+    }
+
+    navigator.clipboard.writeText(textToCopy);
+    setCopyStatus(type);
+    setTimeout(() => setCopyStatus("none"), 2000);
   };
 
   useEffect(() => {
@@ -363,7 +415,33 @@ Section Details:
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
+          {/* Tab Selector (only visible if worksheet exists) */}
+          {lessonPlan.worksheet && (
+            <div className="flex border-b border-gray-800 bg-gray-950/30 px-6 select-none overflow-x-auto">
+              <button
+                onClick={() => setActiveTab("plan")}
+                className={`py-3 px-4 text-xs font-bold tracking-wider uppercase border-b-2 transition duration-200 cursor-pointer whitespace-nowrap ${
+                  activeTab === "plan"
+                    ? "border-blue-500 text-white"
+                    : "border-transparent text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                📋 Lesson Plan Outline
+              </button>
+              <button
+                onClick={() => setActiveTab("worksheet")}
+                className={`py-3 px-4 text-xs font-bold tracking-wider uppercase border-b-2 transition duration-200 cursor-pointer whitespace-nowrap ${
+                  activeTab === "worksheet"
+                    ? "border-blue-500 text-white"
+                    : "border-transparent text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                📄 Student Handouts & Homework
+              </button>
+            </div>
+          )}
+
+          <div className="p-6">
 
             {/* AI Refinement Widget inside Edit mode */}
             {isEditing && (
@@ -404,160 +482,229 @@ Section Details:
               </div>
             )}
 
-            {/* Course Overview */}
-            {lessonPlan.type === "course" && lessonPlan.courseOverview && (
-              <Section title="📋 Course Overview">
-                <p className="text-gray-300 text-sm">{lessonPlan.courseOverview}</p>
-              </Section>
-            )}
+            {activeTab === "plan" && (
+              <div className="space-y-6">
+                {/* Course Overview */}
+                {lessonPlan.type === "course" && lessonPlan.courseOverview && (
+                  <Section title="📋 Course Overview">
+                    <p className="text-gray-300 text-sm">{lessonPlan.courseOverview}</p>
+                  </Section>
+                )}
 
-            {/* Objectives */}
-            <Section title="🎯 Learning Objectives">
-              <ul className="space-y-2">
-                {lessonPlan.objectives.map((obj, i) => (
-                  <li key={i} className="flex gap-2 text-gray-300 text-sm">
-                    <span className="text-blue-400 mt-0.5">•</span>
-                    {obj}
-                  </li>
-                ))}
-              </ul>
-            </Section>
+                {/* Objectives */}
+                <Section title="🎯 Learning Objectives">
+                  <ul className="space-y-2">
+                    {lessonPlan.objectives.map((obj, i) => (
+                      <li key={i} className="flex gap-2 text-gray-300 text-sm">
+                        <span className="text-blue-400 mt-0.5">•</span>
+                        {obj}
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
 
-            {/* Materials */}
-            <Section title="🧰 Materials Needed">
-              <div className="flex flex-wrap gap-2">
-                {lessonPlan.materials.map((mat, i) => (
-                  <span
-                    key={i}
-                    className="bg-gray-800 text-gray-300 text-xs px-3 py-1 rounded-full border border-gray-700"
-                  >
-                    {mat}
-                  </span>
-                ))}
-              </div>
-            </Section>
+                {/* Materials */}
+                <Section title="🧰 Materials Needed">
+                  <div className="flex flex-wrap gap-2">
+                    {lessonPlan.materials.map((mat, i) => (
+                      <span
+                        key={i}
+                        className="bg-gray-800 text-gray-300 text-xs px-3 py-1 rounded-full border border-gray-700"
+                      >
+                        {mat}
+                      </span>
+                    ))}
+                  </div>
+                </Section>
 
-            {/* COURSE: Sections */}
-            {lessonPlan.type === "course" && (
-              <Section title={`📂 Course Sections (${lessonPlan.sections?.length || 0})`}>
-                <div className="space-y-3">
-                  {lessonPlan.sections?.map((s, i) => (
-                    <div
-                      key={i}
-                      className="bg-gray-800 border border-gray-700 rounded-xl p-4 hover:border-blue-500/30 transition duration-200"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-blue-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">
-                            {s.sectionNumber}
-                          </span>
-                          <span className="text-white text-sm font-medium">{s.title}</span>
-                        </div>
-                        <span className="text-gray-400 text-xs shrink-0 ml-2">{s.duration}</span>
-                      </div>
-                      <p className="text-gray-400 text-xs mb-2">{s.description}</p>
-                      {s.activities && (
-                        <p className="text-gray-500 text-xs mb-2">
-                          <span className="text-gray-400 font-medium">Activities: </span>
-                          {s.activities}
-                        </p>
-                      )}
-                      {s.assessment && (
-                        <p className="text-gray-500 text-xs mb-2">
-                          <span className="text-gray-400 font-medium">Assessment: </span>
-                          {s.assessment}
-                        </p>
-                      )}
-                      {s.objectives && s.objectives.length > 0 && (
-                        <div className="mt-2 space-y-0.5">
-                          {s.objectives.map((obj, j) => (
-                            <p key={j} className="text-xs text-blue-300">• {obj}</p>
-                          ))}
-                        </div>
-                      )}
-                      <div className="mt-3 flex justify-end border-t border-gray-700/50 pt-3">
-                        <button
-                          onClick={() => handleGenerateSectionPlan(s)}
-                          disabled={generatingSection !== null}
-                          className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs px-3 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                {/* COURSE: Sections */}
+                {lessonPlan.type === "course" && (
+                  <Section title={`📂 Course Sections (${lessonPlan.sections?.length || 0})`}>
+                    <div className="space-y-3">
+                      {lessonPlan.sections?.map((s, i) => (
+                        <div
+                          key={i}
+                          className="bg-gray-800 border border-gray-700 rounded-xl p-4 hover:border-blue-500/30 transition duration-200"
                         >
-                          {generatingSection === s.sectionNumber ? (
-                            <>
-                              <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                              Preparing...
-                            </>
-                          ) : (
-                            <>
-                              <span>⚡</span> Generate Lesson Plan
-                            </>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-blue-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0">
+                                {s.sectionNumber}
+                              </span>
+                              <span className="text-white text-sm font-medium">{s.title}</span>
+                            </div>
+                            <span className="text-gray-400 text-xs shrink-0 ml-2">{s.duration}</span>
+                          </div>
+                          <p className="text-gray-400 text-xs mb-2">{s.description}</p>
+                          {s.activities && (
+                            <p className="text-gray-500 text-xs mb-2">
+                              <span className="text-gray-400 font-medium">Activities: </span>
+                              {s.activities}
+                            </p>
                           )}
-                        </button>
-                      </div>
+                          {s.assessment && (
+                            <p className="text-gray-500 text-xs mb-2">
+                              <span className="text-gray-400 font-medium">Assessment: </span>
+                              {s.assessment}
+                            </p>
+                          )}
+                          {s.objectives && s.objectives.length > 0 && (
+                            <div className="mt-2 space-y-0.5">
+                              {s.objectives.map((obj, j) => (
+                                <p key={j} className="text-xs text-blue-300">• {obj}</p>
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-3 flex justify-end border-t border-gray-700/50 pt-3">
+                            <button
+                              onClick={() => handleGenerateSectionPlan(s)}
+                              disabled={generatingSection !== null}
+                              className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs px-3 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                            >
+                              {generatingSection === s.sectionNumber ? (
+                                <>
+                                  <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                                  Preparing...
+                                </>
+                              ) : (
+                                <>
+                                  <span>⚡</span> Generate Lesson Plan
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </Section>
+                )}
+
+                {/* LESSON: Structure */}
+                {lessonPlan.type === "lesson" && (
+                  <Section title="📋 Lesson Structure">
+                    <div className="space-y-3">
+                      <StructureBlock
+                        label="Introduction"
+                        duration={lessonPlan.lessonStructure?.introduction.duration || ""}
+                        description={lessonPlan.lessonStructure?.introduction.description || ""}
+                        color="bg-green-500/10 border-green-500/20"
+                      />
+                      <StructureBlock
+                        label="Main Activity"
+                        duration={lessonPlan.lessonStructure?.mainActivity.duration || ""}
+                        description={lessonPlan.lessonStructure?.mainActivity.description || ""}
+                        color="bg-blue-500/10 border-blue-500/20"
+                      />
+                      <StructureBlock
+                        label="Wrap Up"
+                        duration={lessonPlan.lessonStructure?.wrapUp.duration || ""}
+                        description={lessonPlan.lessonStructure?.wrapUp.description || ""}
+                        color="bg-purple-500/10 border-purple-500/20"
+                      />
+                    </div>
+                  </Section>
+                )}
+
+                {/* LESSON: Assessment */}
+                {lessonPlan.type === "lesson" && lessonPlan.assessment && (
+                  <Section title="📝 Assessment Ideas">
+                    <ul className="space-y-2">
+                      {lessonPlan.assessment.map((item, i) => (
+                        <li key={i} className="flex gap-2 text-gray-300 text-sm">
+                          <span className="text-green-400 mt-0.5">✓</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </Section>
+                )}
+
+                {/* COURSE: Final Assessment */}
+                {lessonPlan.type === "course" && lessonPlan.finalAssessment && (
+                  <Section title="🏆 Final Assessment">
+                    <p className="text-gray-300 text-sm">{lessonPlan.finalAssessment}</p>
+                  </Section>
+                )}
+
+                {/* LESSON: Homework */}
+                {lessonPlan.type === "lesson" && lessonPlan.homework && (
+                  <Section title="🏠 Homework">
+                    <p className="text-gray-300 text-sm">{lessonPlan.homework}</p>
+                  </Section>
+                )}
+
+                {/* Notes */}
+                {lessonPlan.notes && (
+                  <Section title="📌 Teacher Notes">
+                    <p className="text-gray-300 text-sm">{lessonPlan.notes}</p>
+                  </Section>
+                )}
+
+                {/* Generate Worksheet Block (only if worksheet does not exist) */}
+                {!lessonPlan.worksheet && (
+                  <div className="mt-8 border-t border-gray-800 pt-6">
+                    <div className="bg-gradient-to-r from-blue-600/5 to-indigo-600/5 border border-blue-500/10 rounded-2xl p-6 text-center">
+                      <p className="text-2xl mb-3 select-none">📝</p>
+                      <h3 className="text-white font-bold text-base mb-1">Generate Student Handouts & Homework</h3>
+                      <p className="text-gray-400 text-xs max-w-md mx-auto mb-5 leading-relaxed">
+                        Create printable explanations, solved examples, classroom practice problems, and assignments tailored to this plan.
+                      </p>
+                      <button
+                        onClick={handleGenerateWorksheet}
+                        disabled={generatingWorksheet}
+                        className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition duration-250 cursor-pointer shadow-lg shadow-blue-600/15"
+                      >
+                        {generatingWorksheet ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Generating Handout...
+                          </span>
+                        ) : (
+                          "⚡ Generate Handout & Homework"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Render Worksheet Content */}
+            {activeTab === "worksheet" && lessonPlan.worksheet && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                {/* Worksheet Header / Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 pb-4">
+                  <div>
+                    <h3 className="text-white font-bold text-sm">Printable Handouts & Homework</h3>
+                    <p className="text-gray-500 text-[10px]">Print or copy segments directly for your student</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleCopyText("student")}
+                      className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs px-3.5 py-1.5 rounded-lg transition font-semibold cursor-pointer"
+                    >
+                      {copyStatus === "student" ? "Copied! ✓" : "📋 Copy Handout"}
+                    </button>
+                    <button
+                      onClick={() => handleCopyText("answers")}
+                      className="bg-green-600/10 hover:bg-green-600/20 text-green-400 text-xs px-3.5 py-1.5 rounded-lg transition font-semibold cursor-pointer"
+                    >
+                      {copyStatus === "answers" ? "Copied! ✓" : "🔑 Copy Answer Key"}
+                    </button>
+                    <button
+                      onClick={() => handleCopyText("full")}
+                      className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-3.5 py-1.5 rounded-lg border border-gray-700 transition font-semibold cursor-pointer"
+                    >
+                      {copyStatus === "full" ? "Copied! ✓" : "📄 Copy Full"}
+                    </button>
+                  </div>
                 </div>
-              </Section>
-            )}
 
-            {/* LESSON: Structure */}
-            {lessonPlan.type === "lesson" && (
-              <Section title="📋 Lesson Structure">
-                <div className="space-y-3">
-                  <StructureBlock
-                    label="Introduction"
-                    duration={lessonPlan.lessonStructure?.introduction.duration || ""}
-                    description={lessonPlan.lessonStructure?.introduction.description || ""}
-                    color="bg-green-500/10 border-green-500/20"
-                  />
-                  <StructureBlock
-                    label="Main Activity"
-                    duration={lessonPlan.lessonStructure?.mainActivity.duration || ""}
-                    description={lessonPlan.lessonStructure?.mainActivity.description || ""}
-                    color="bg-blue-500/10 border-blue-500/20"
-                  />
-                  <StructureBlock
-                    label="Wrap Up"
-                    duration={lessonPlan.lessonStructure?.wrapUp.duration || ""}
-                    description={lessonPlan.lessonStructure?.wrapUp.description || ""}
-                    color="bg-purple-500/10 border-purple-500/20"
-                  />
+                {/* Worksheet Body */}
+                <div className="bg-gray-950/40 border border-gray-800/80 rounded-2xl p-6 font-sans text-sm text-gray-300 leading-relaxed whitespace-pre-wrap select-text selection:bg-blue-500/30 overflow-x-auto max-h-[600px] scrollbar-thin">
+                  {lessonPlan.worksheet}
                 </div>
-              </Section>
-            )}
-
-            {/* LESSON: Assessment */}
-            {lessonPlan.type === "lesson" && lessonPlan.assessment && (
-              <Section title="📝 Assessment Ideas">
-                <ul className="space-y-2">
-                  {lessonPlan.assessment.map((item, i) => (
-                    <li key={i} className="flex gap-2 text-gray-300 text-sm">
-                      <span className="text-green-400 mt-0.5">✓</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </Section>
-            )}
-
-            {/* COURSE: Final Assessment */}
-            {lessonPlan.type === "course" && lessonPlan.finalAssessment && (
-              <Section title="🏆 Final Assessment">
-                <p className="text-gray-300 text-sm">{lessonPlan.finalAssessment}</p>
-              </Section>
-            )}
-
-            {/* LESSON: Homework */}
-            {lessonPlan.type === "lesson" && lessonPlan.homework && (
-              <Section title="🏠 Homework">
-                <p className="text-gray-300 text-sm">{lessonPlan.homework}</p>
-              </Section>
-            )}
-
-            {/* Notes */}
-            {lessonPlan.notes && (
-              <Section title="📌 Teacher Notes">
-                <p className="text-gray-300 text-sm">{lessonPlan.notes}</p>
-              </Section>
+              </div>
             )}
 
           </div>

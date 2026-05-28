@@ -291,7 +291,7 @@ function ChatContent() {
                 </div>
                 <div className="max-w-3xl mx-auto flex items-center justify-between mt-3 text-[10px] text-gray-500 px-1 select-none">
                     <span>© {new Date().getFullYear()} TutorMind. All rights reserved.</span>
-                    <span className="font-mono bg-gray-950 border border-gray-800/80 rounded px-1.5 py-0.5">v1.1.4</span>
+                    <span className="font-mono bg-gray-950 border border-gray-800/80 rounded px-1.5 py-0.5">v1.2.0</span>
                 </div>
             </div>
         </div>
