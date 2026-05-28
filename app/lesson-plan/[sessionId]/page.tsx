@@ -58,6 +58,42 @@ export default function LessonPlanPage() {
   const [refining, setRefining] = useState(false);
   const [refineError, setRefineError] = useState("");
 
+  // Renaming state
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [renaming, setRenaming] = useState(false);
+
+  const handleRenameSubmit = async () => {
+    if (!renameValue.trim() || !lessonPlanId || !lessonPlan) return;
+    setRenaming(true);
+    try {
+      const res = await fetch(`/api/lesson-plan/${lessonPlanId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          structure: {
+            ...lessonPlan,
+            title: renameValue.trim(),
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to rename plan.");
+        return;
+      }
+
+      setLessonPlan(data.lessonPlan.structure);
+      setIsRenaming(false);
+    } catch (err) {
+      console.error("Rename error:", err);
+      alert("Something went wrong.");
+    } finally {
+      setRenaming(false);
+    }
+  };
+
   const [generatingSection, setGeneratingSection] = useState<number | null>(null);
 
   const handleGenerateSectionPlan = async (section: Section) => {
@@ -271,12 +307,55 @@ Section Details:
 
           {/* Title Block */}
           <div className="bg-blue-600 px-6 py-5">
-            <div className="mb-1">
+            <div className="mb-1 flex justify-between items-start">
               <span className="text-blue-200 text-xs font-medium uppercase tracking-wide">
                 {lessonPlan.type === "course" ? "📘 Course Plan" : "📄 Lesson Plan"}
               </span>
             </div>
-            <h1 className="text-xl font-bold text-white">{lessonPlan.title}</h1>
+
+            {isRenaming ? (
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="text"
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  className="bg-blue-700 text-white text-lg font-bold rounded px-2 py-1 w-full max-w-lg border border-blue-500 focus:outline-none focus:ring-1 focus:ring-white"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRenameSubmit();
+                    if (e.key === "Escape") setIsRenaming(false);
+                  }}
+                />
+                <button
+                  onClick={handleRenameSubmit}
+                  disabled={renaming}
+                  className="bg-white text-blue-600 text-xs px-3 py-1.5 rounded-lg transition font-semibold hover:bg-blue-50 cursor-pointer disabled:opacity-50"
+                >
+                  {renaming ? "..." : "Save"}
+                </button>
+                <button
+                  onClick={() => setIsRenaming(false)}
+                  className="text-blue-200 hover:text-white text-xs px-2 py-1.5 transition font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group mt-1">
+                <h1 className="text-xl font-bold text-white leading-tight">{lessonPlan.title}</h1>
+                <button
+                  onClick={() => {
+                    setIsRenaming(true);
+                    setRenameValue(lessonPlan.title);
+                  }}
+                  className="text-blue-200 hover:text-white text-sm cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity font-semibold"
+                  title="Rename Plan"
+                >
+                  ✏️
+                </button>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-4 mt-2 text-blue-100 text-sm">
               <span>📚 {lessonPlan.subject}</span>
               <span>🎓 {lessonPlan.gradeLevel}</span>
