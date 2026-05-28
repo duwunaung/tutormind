@@ -11,12 +11,19 @@ type LessonPlan = {
   blobUrl: string | null;
 };
 
+type ChatMessage = {
+  role: string;
+  content: string;
+  ready?: boolean;
+};
+
 type ChatSession = {
   id: string;
   title: string;
   subject: string;
   planType: string;
   createdAt: string;
+  messages: ChatMessage[];
   lessonPlan: LessonPlan | null;
 };
 
@@ -108,6 +115,13 @@ export default function DashboardPage() {
   const totalLessons = sessions.filter((s) => s.lessonPlan && s.planType === "lesson").length;
   const totalInProgress = totalSessions - totalPlans;
 
+  const isReadyToGenerate = (s: ChatSession) => {
+    const msgs = s.messages;
+    if (!Array.isArray(msgs) || msgs.length === 0) return false;
+    if (msgs[0].role === "user") return true; // Wizard session
+    return msgs.some((m) => m.role === "assistant" && m.ready === true);
+  };
+
   const stats = [
     {
       id: "plans" as const,
@@ -124,14 +138,6 @@ export default function DashboardPage() {
       desc: "Total planning history",
       color: "text-blue-400 border-blue-500/20 bg-blue-500/5",
       icon: "💬",
-    },
-    {
-      id: "courses" as const,
-      title: "Course Plans",
-      value: totalCourses,
-      desc: "Curriculums generated",
-      color: "text-indigo-400 border-indigo-500/20 bg-indigo-500/5",
-      icon: "📘",
     },
   ];
 
@@ -179,7 +185,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Tutor Analytics Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
           {stats.map((stat) => (
             <div
               key={stat.id}
@@ -343,12 +349,14 @@ export default function DashboardPage() {
 
                       {!s.lessonPlan && (
                         <>
-                          <button
-                            onClick={() => router.push(`/lesson-plan/${s.id}`)}
-                            className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-semibold flex-1 sm:flex-none text-center cursor-pointer"
-                          >
-                            ⚡ Generate Plan
-                          </button>
+                          {isReadyToGenerate(s) && (
+                            <button
+                              onClick={() => router.push(`/lesson-plan/${s.id}`)}
+                              className="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-semibold flex-1 sm:flex-none text-center cursor-pointer"
+                            >
+                              ⚡ Generate Plan
+                            </button>
+                          )}
                           <button
                             onClick={() => router.push(`/chat?session=${s.id}`)}
                             className="bg-yellow-600/10 hover:bg-yellow-600/20 text-yellow-400 text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-semibold flex-1 sm:flex-none text-center cursor-pointer"

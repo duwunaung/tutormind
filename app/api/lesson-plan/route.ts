@@ -39,7 +39,19 @@ export async function POST(req: Request) {
         }
 
         // Build chat summary for Groq
-        const messages = chatSession.messages as { role: string; content: string }[];
+        const messages = chatSession.messages as { role: string; content: string; ready?: boolean }[];
+
+        // Validation check for session readiness (only allow wizard flows or chat flows with ready status)
+        const isWizard = Array.isArray(messages) && messages.length > 0 && messages[0].role === "user";
+        const isChatReady = Array.isArray(messages) && messages.some((m) => m.role === "assistant" && m.ready === true);
+
+        if (!isWizard && !isChatReady) {
+            return NextResponse.json(
+                { error: "Session is not ready for generation. Please finish the chat session first." },
+                { status: 400 }
+            );
+        }
+
         const chatHistory = messages
             .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
             .join("\n\n");
