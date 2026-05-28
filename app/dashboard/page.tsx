@@ -127,7 +127,7 @@ export default function DashboardPage() {
     },
     {
       id: "courses" as const,
-      title: "Saved Courses",
+      title: "Course Plans",
       value: totalCourses,
       desc: "Curriculums generated",
       color: "text-indigo-400 border-indigo-500/20 bg-indigo-500/5",
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                     : "border-transparent text-gray-500 hover:text-gray-300"
                 }`}
               >
-                📘 Saved Courses ({totalCourses})
+                📘 Course Plans ({totalCourses})
               </button>
               <button
                 onClick={() => setActiveFilter("in_progress")}
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                 <p className="text-white font-semibold mb-1">
                   {activeFilter === "plans" && "No plans generated yet"}
                   {activeFilter === "lessons" && "No lesson plans found"}
-                  {activeFilter === "courses" && "No saved courses found"}
+                  {activeFilter === "courses" && "No course plans found"}
                   {activeFilter === "in_progress" && "No sessions in progress"}
                 </p>
                 <p className="text-gray-400 text-xs max-w-sm mb-4">
@@ -350,7 +350,7 @@ export default function DashboardPage() {
                             ⚡ Generate Plan
                           </button>
                           <button
-                            onClick={() => router.push(s.planType === "course" ? `/new-plan` : `/chat`)}
+                            onClick={() => router.push(`/chat?session=${s.id}`)}
                             className="bg-yellow-600/10 hover:bg-yellow-600/20 text-yellow-400 text-xs px-3.5 py-2 sm:py-1.5 rounded-lg transition font-semibold flex-1 sm:flex-none text-center cursor-pointer"
                           >
                             💬 Chat
