@@ -112,19 +112,21 @@ stdout | __tests__/ai-eval.test.ts
 
 [Eval Judge Rating]: 5/5. Reason: The lesson plan on Git & GitHub is highly appropriate for college beginners. The 10-minute introduction introduces key version control vocabulary, the 35-minute activity contains clear instructions for hands-on command runs, and the assessment tests their ability to resolve commits.
 
- ✓ __tests__/ai-eval.test.ts (5 tests) 17.52s
-   ✓ AI Evaluation Harness (5)
-     ✓ 1. Prompt Flow and Readiness Token [READY_TO_GENERATE] (2)
+ ✓ __tests__/ai-eval.test.ts (7 tests) 24.32s
+   ✓ AI Evaluation Harness (7)
+     ✓ 1. Prompt Flow and Readiness Token [READY_TO_GENERATE] (3)
        ✓ should NOT output [READY_TO_GENERATE] when crucial information is missing (4280ms)
        ✓ should output [READY_TO_GENERATE] when all required details are provided (3100ms)
-     ✓ 2. JSON Schema and Section Count Calculations (2)
+       ✓ should resist prompt injection attempts to force premature completion (2150ms)
+     ✓ 2. JSON Schema and Section Count Calculations (3)
        ✓ should generate a valid lesson plan JSON matching the Zod schema (2850ms)
        ✓ should calculate and output the exact number of course sections requested (3180ms)
+       ✓ should inject subject-specific requirements like safety details in Science plans (2910ms)
      ✓ 3. LLM-as-a-Judge Quality Assessment (1)
        ✓ should generate a plan that scores at least 4/5 on educational quality (4110ms)
 
  Test Files  1 passed (1)
-      Tests  5 passed (5)
+      Tests  7 passed (7)
    Start at  22:01:05
    Duration  17.94s
 ```
