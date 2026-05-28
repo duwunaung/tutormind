@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { verifyUser } from "@/lib/auth-util";
 import { prisma } from "@/lib/prisma";
 import { del } from "@vercel/blob";
@@ -92,10 +93,10 @@ export async function PATCH(
     const { session } = authResult;
 
     const { id } = await params;
-    const { messages } = await req.json();
+    const { messages, title } = await req.json();
 
-    if (!messages) {
-      return NextResponse.json({ error: "Missing messages parameter" }, { status: 400 });
+    if (!messages && !title) {
+      return NextResponse.json({ error: "Missing parameter (messages or title)" }, { status: 400 });
     }
 
     const chatSession = await prisma.session.findUnique({
@@ -110,10 +111,29 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const dataToUpdate: { messages?: { role: string; content: string; ready?: boolean }[]; title?: string } = {};
+    if (messages) dataToUpdate.messages = messages;
+    if (title) dataToUpdate.title = title;
+
     const updated = await prisma.session.update({
       where: { id },
-      data: { messages },
+      data: dataToUpdate,
     });
+
+    if (title) {
+      // Sync with lesson plan structure title if it exists
+      const associatedPlan = await prisma.lessonPlan.findUnique({
+        where: { sessionId: id },
+      });
+      if (associatedPlan && associatedPlan.structure) {
+        const structure = associatedPlan.structure as Prisma.JsonObject;
+        structure.title = title;
+        await prisma.lessonPlan.update({
+          where: { id: associatedPlan.id },
+          data: { structure: structure as Prisma.InputJsonValue, blobUrl: null },
+        });
+      }
+    }
 
     return NextResponse.json({ session: updated });
   } catch (error) {

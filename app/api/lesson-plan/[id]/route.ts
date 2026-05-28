@@ -48,6 +48,12 @@ export async function PATCH(
       },
     });
 
+    // Update the parent session title to match the new structure title
+    await prisma.session.update({
+      where: { id: lessonPlan.sessionId },
+      data: { title: structure.title },
+    });
+
     await createAuditLog({
       action: "EDIT_PLAN",
       actorId: session.user.id,

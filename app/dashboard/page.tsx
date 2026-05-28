@@ -37,6 +37,31 @@ export default function DashboardPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<"all" | "plans" | "lessons" | "courses" | "in_progress">("all");
 
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  const handleRenameSubmit = async (sessionId: string) => {
+    if (!renameValue.trim()) return;
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: renameValue.trim() }),
+      });
+      if (!res.ok) {
+        alert("Failed to rename session.");
+        return;
+      }
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, title: renameValue.trim() } : s))
+      );
+      setRenamingId(null);
+    } catch (err) {
+      console.error("Rename error:", err);
+      alert("Something went wrong.");
+    }
+  };
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -309,7 +334,47 @@ export default function DashboardPage() {
                         }`}>
                           {s.planType === "course" ? "📚 Course" : "📝 Lesson"}
                         </span>
-                        <p className="text-white text-sm font-semibold truncate flex-1" title={s.title}>{s.title}</p>
+                        {renamingId === s.id ? (
+                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <input
+                              type="text"
+                              value={renameValue}
+                              onChange={(e) => setRenameValue(e.target.value)}
+                              className="bg-gray-800 border border-gray-700 text-white text-xs rounded px-2 py-0.5 w-full max-w-[200px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleRenameSubmit(s.id);
+                                if (e.key === "Escape") setRenamingId(null);
+                              }}
+                            />
+                            <button
+                              onClick={() => handleRenameSubmit(s.id)}
+                              className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded cursor-pointer font-semibold shrink-0"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setRenamingId(null)}
+                              className="text-gray-400 hover:text-white text-[10px] px-1 py-0.5 cursor-pointer font-semibold shrink-0"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1 group">
+                            <p className="text-white text-sm font-semibold truncate" title={s.title}>{s.title}</p>
+                            <button
+                              onClick={() => {
+                                setRenamingId(s.id);
+                                setRenameValue(s.title);
+                              }}
+                              className="text-gray-500 hover:text-blue-400 text-xs cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity font-semibold"
+                              title="Rename"
+                            >
+                              ✏️
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
                         <span>{s.subject}</span>
