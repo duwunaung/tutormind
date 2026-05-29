@@ -135,7 +135,13 @@ stdout | __tests__/ai-eval.test.ts
 
 ---
 
-## 📋 Changelog (v1.1.0 - v1.3.0)
+## 📋 Changelog (v1.1.0 - v1.3.1)
+
+### ⚡ Navigation Redesign, Upgraded Spark Page & Floating Speed Dial (v1.3.1)
+* **Dedicated AI Spark Sandbox Page**: Moved the Spark tool from the dashboard to `/spark`, adding desktop header navigation and a mobile drawer link.
+* **Upgraded AI Spark Tool**: Added dropdowns for **Subject** and **Grade Level** to target generation, plus a **"⚡ Create Lesson Plan"** button that instantly starts a chat planning session with the generated ideas pre-loaded.
+* **Floating Speed Dial Menu (Option 2)**: Replaced the header buttons on the lesson plan/course outline page with a premium bottom-right floating speed dial (FAB) containing *Refine Plan*, *Download DOCX*, and *Print PDF*.
+* **Worksheet Overwrite Protection**: Added a browser confirmation prompt warning users that refining a lesson plan will overwrite/invalidate any existing generated worksheets.
 
 ### ⚡ AI Spark Sandbox & PDF Export (v1.3.0)
 * **AI Spark Sandbox Widget**: Added a dashboard widget allowing tutors to input any topic and instantly generate a 5-minute hook/icebreaker, an active classroom game, and a real-world analogy.

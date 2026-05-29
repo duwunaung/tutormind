@@ -84,6 +84,12 @@ export default function AppHeader({ mode, actions }: AppHeaderProps) {
             Dashboard
           </button>
           <button
+            onClick={() => router.push("/spark")}
+            className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition font-medium"
+          >
+            AI Spark
+          </button>
+          <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="text-gray-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800 transition font-medium"
           >
@@ -160,6 +166,15 @@ export default function AppHeader({ mode, actions }: AppHeaderProps) {
 
           {/* Navigation links */}
           <div className="flex flex-col gap-2">
+            <button
+              onClick={() => {
+                router.push("/spark");
+                setMobileMenuOpen(false);
+              }}
+              className="w-full text-left text-gray-200 hover:text-white text-sm py-2.5 px-3 rounded-xl hover:bg-gray-800 transition font-medium"
+            >
+              ⚡ AI Spark Sandbox
+            </button>
             <button
               onClick={() => {
                 router.push("/dashboard");
