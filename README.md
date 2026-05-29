@@ -65,6 +65,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🧪 Testing & AI Evaluation
 
+For the complete test plan, detailed test cases, manual verification scenarios, and recent test run logs, see the full [TESTING.md](TESTING.md) guide.
+
 TutorMind includes two testing pipelines configured under **Vitest**:
 
 ### A. Quick Unit Tests
