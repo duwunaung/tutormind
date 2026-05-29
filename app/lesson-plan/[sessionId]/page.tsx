@@ -352,6 +352,79 @@ Section Details:
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
+      {/* Global CSS style block for printing both Plan Outline and Worksheet */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          body {
+            background: white !important;
+            color: black !important;
+          }
+          
+          /* Hide all page content by default */
+          body * {
+            visibility: hidden;
+          }
+          
+          /* Only display the active container and its descendants */
+          ${activeTab === "worksheet" ? "#printable-worksheet" : "#printable-card"}, 
+          ${activeTab === "worksheet" ? "#printable-worksheet" : "#printable-card"} * {
+            visibility: visible;
+          }
+          
+          ${activeTab === "worksheet" ? "#printable-worksheet" : "#printable-card"} {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: ${activeTab === "worksheet" ? "1.5cm" : "0"} !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: white !important;
+            color: black !important;
+          }
+          
+          .no-print {
+            display: none !important;
+            visibility: hidden !important;
+          }
+          
+          .page-break {
+            page-break-before: always !important;
+            break-before: page !important;
+          }
+
+          /* Plan Print Colors - override dark backgrounds for print */
+          #printable-card {
+            background: white !important;
+            color: black !important;
+          }
+          #printable-card .bg-blue-600 {
+            background: #f3f4f6 !important;
+            border-bottom: 2px solid #2563eb !important;
+            color: black !important;
+            padding: 1.5rem !important;
+          }
+          #printable-card .bg-blue-600 * {
+            color: black !important;
+          }
+          #printable-card .bg-gray-800, #printable-card .bg-gray-900 {
+            background: white !important;
+            border: 1px solid #e5e7eb !important;
+            color: black !important;
+          }
+          #printable-card .text-gray-300, #printable-card .text-gray-400, #printable-card .text-gray-500 {
+            color: #374151 !important;
+          }
+          #printable-card .text-white {
+            color: black !important;
+          }
+          #printable-card .border-gray-800, #printable-card .border-gray-700 {
+            border-color: #e5e7eb !important;
+          }
+        }
+      `}} />
       {/* Header */}
       <AppHeader
           actions={
@@ -387,6 +460,12 @@ Section Details:
                 >
                   {downloading ? "Generating..." : "⬇ Download DOCX"}
                 </button>
+                <button
+                  onClick={() => window.print()}
+                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-1.5 rounded-lg border border-gray-700 transition font-medium cursor-pointer"
+                >
+                  🖨️ Print / Save PDF
+                </button>
               </div>
             )
           }
@@ -395,7 +474,7 @@ Section Details:
         <div className="max-w-3xl w-full mx-auto px-4 py-6 sm:py-8 flex-1 flex flex-col justify-start">
 
         {/* Plan Card */}
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+        <div id="printable-card" className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
 
           {/* Title Block */}
           <div className="bg-blue-600 px-6 py-5">
@@ -457,7 +536,7 @@ Section Details:
 
           {/* Tab Selector (only visible if worksheet exists) */}
           {lessonPlan.worksheet && (
-            <div className="flex border-b border-gray-800 bg-gray-950/30 px-6 select-none overflow-x-auto">
+            <div className="flex border-b border-gray-800 bg-gray-950/30 px-6 select-none overflow-x-auto no-print">
               <button
                 onClick={() => setActiveTab("plan")}
                 className={`py-3 px-4 text-xs font-bold tracking-wider uppercase border-b-2 transition duration-200 cursor-pointer whitespace-nowrap ${
@@ -485,7 +564,7 @@ Section Details:
 
             {/* AI Refinement Widget inside Edit mode */}
             {isEditing && (
-              <div className="bg-blue-600/5 border border-blue-500/20 rounded-xl p-4 space-y-3">
+              <div className="bg-blue-600/5 border border-blue-500/20 rounded-xl p-4 space-y-3 no-print">
                 <div className="flex items-center justify-between">
                   <h3 className="text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                     <span>✨</span> Quick AI Refinement
@@ -595,7 +674,7 @@ Section Details:
                               ))}
                             </div>
                           )}
-                          <div className="mt-3 flex justify-end border-t border-gray-700/50 pt-3">
+                          <div className="mt-3 flex justify-end border-t border-gray-700/50 pt-3 no-print">
                             <button
                               onClick={() => handleGenerateSectionPlan(s)}
                               disabled={generatingSection !== null}
@@ -682,7 +761,7 @@ Section Details:
 
                 {/* Generate Worksheet Block (only if worksheet does not exist) */}
                 {!lessonPlan.worksheet && (
-                  <div className="mt-8 border-t border-gray-800 pt-6">
+                  <div className="mt-8 border-t border-gray-800 pt-6 no-print">
                     <div className="bg-gradient-to-r from-blue-600/5 to-indigo-600/5 border border-blue-500/10 rounded-2xl p-6 text-center">
                       <p className="text-2xl mb-3 select-none">📝</p>
                       <h3 className="text-white font-bold text-base mb-1">Generate Student Handouts & Homework</h3>
@@ -789,43 +868,7 @@ Section Details:
                     id="printable-worksheet"
                     className="bg-white text-gray-900 border border-gray-200/80 shadow-2xl p-8 md:p-14 max-w-[850px] mx-auto rounded-2xl min-h-[1100px] relative font-sans select-text"
                   >
-                    {/* Style injection for printing (hides other dashboard UI elements) */}
-                    <style dangerouslySetInnerHTML={{__html: `
-                      @media print {
-                        body {
-                          background: white !important;
-                          color: black !important;
-                        }
-                        /* Hide all page content by default */
-                        body * {
-                          visibility: hidden;
-                        }
-                        /* Only display the printable sheet container and its descendants */
-                        #printable-worksheet, #printable-worksheet * {
-                          visibility: visible;
-                        }
-                        #printable-worksheet {
-                          position: absolute;
-                          left: 0;
-                          top: 0;
-                          width: 100% !important;
-                          max-width: 100% !important;
-                          padding: 1.5cm !important;
-                          margin: 0 !important;
-                          box-shadow: none !important;
-                          border: none !important;
-                          background: white !important;
-                          color: black !important;
-                        }
-                        .no-print {
-                          display: none !important;
-                        }
-                        .page-break {
-                          page-break-before: always !important;
-                          break-before: page !important;
-                        }
-                      }
-                    `}} />
+                    {/* Local style tag has been unified at page root level */}
 
                     {/* Header Banner - print and screen-friendly layout */}
                     <div className="border-b-2 border-gray-900 pb-5 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
