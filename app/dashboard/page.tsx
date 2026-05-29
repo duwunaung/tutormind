@@ -190,24 +190,16 @@ export default function DashboardPage() {
 
       <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex-1 flex flex-col justify-start">
 
-        {/* Welcome + New Session */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              Welcome back, {session?.user?.name?.split(" ")[0]}! 👋
-            </h2>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              {sessions.length === 0
-                ? "Start your first session to get going"
-                : `You have ${sessions.length} session${sessions.length > 1 ? "s" : ""} so far`}
-            </p>
-          </div>
-          <button
-            onClick={() => router.push("/new-plan")}
-            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition duration-200 w-full sm:w-auto text-center cursor-pointer shadow-lg shadow-blue-600/15"
-          >
-            + New Plan
-          </button>
+        {/* Welcome Block */}
+        <div className="mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+            Welcome back, {session?.user?.name?.split(" ")[0]}! 👋
+          </h2>
+          <p className="text-gray-400 text-xs sm:text-sm mt-1">
+            {sessions.length === 0
+              ? "Start your first session to get going"
+              : `You have ${sessions.length} session${sessions.length > 1 ? "s" : ""} so far`}
+          </p>
         </div>
 
         {/* Tutor Analytics Stats Grid */}
@@ -465,6 +457,30 @@ export default function DashboardPage() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Floating New Plan FAB */}
+      <div className="fixed bottom-6 right-6 z-30 no-print">
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes pulseGlowBlue {
+            0%, 100% {
+              box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+            }
+            50% {
+              box-shadow: 0 0 25px rgba(37, 99, 235, 0.8);
+            }
+          }
+          .animate-pulse-glow-blue {
+            animation: pulseGlowBlue 2s infinite;
+          }
+        `}} />
+        <button
+          onClick={() => router.push("/new-plan")}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 duration-200 cursor-pointer text-sm animate-pulse-glow-blue border border-blue-500/30"
+        >
+          <span className="text-base font-black">➕</span>
+          <span>New Plan</span>
+        </button>
       </div>
 
       <AppFooter />

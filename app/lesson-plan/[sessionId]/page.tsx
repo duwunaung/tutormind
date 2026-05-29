@@ -942,11 +942,25 @@ Section Details:
 
       {/* Floating Speed Dial FAB */}
       <div className="fixed bottom-6 right-6 z-30 no-print flex flex-col items-end">
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes pulseGlowBluePlan {
+            0%, 100% {
+              box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+            }
+            50% {
+              box-shadow: 0 0 25px rgba(37, 99, 235, 0.8);
+            }
+          }
+          .animate-pulse-glow-blue-plan {
+            animation: pulseGlowBluePlan 2s infinite;
+          }
+        `}} />
+
         {speedDialOpen && (
           <div className="mb-3 flex flex-col gap-3 items-end animate-in fade-in slide-in-from-bottom-5 duration-200">
             {/* Refine Option */}
             <div className="flex items-center gap-2">
-              <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-2.5 py-1 rounded-lg border border-gray-800 shadow-md backdrop-blur-sm select-none">
+              <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-800 shadow-md backdrop-blur-sm select-none">
                 Refine with AI
               </span>
               <button
@@ -963,7 +977,7 @@ Section Details:
 
             {/* DOCX Option */}
             <div className="flex items-center gap-2">
-              <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-2.5 py-1 rounded-lg border border-gray-800 shadow-md backdrop-blur-sm select-none">
+              <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-800 shadow-md backdrop-blur-sm select-none">
                 Download DOCX
               </span>
               <button
@@ -981,7 +995,7 @@ Section Details:
 
             {/* PDF Option */}
             <div className="flex items-center gap-2">
-              <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-2.5 py-1 rounded-lg border border-gray-800 shadow-md backdrop-blur-sm select-none">
+              <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-800 shadow-md backdrop-blur-sm select-none">
                 Print / Save PDF
               </span>
               <button
@@ -1001,11 +1015,19 @@ Section Details:
         {/* Main Toggle Button */}
         <button
           onClick={() => setSpeedDialOpen(!speedDialOpen)}
-          className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 transition-transform active:scale-95 duration-200 cursor-pointer text-xl z-40 focus:outline-none"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 duration-200 cursor-pointer text-sm animate-pulse-glow-blue-plan border border-blue-500/30 z-40 focus:outline-none"
         >
-          <span className={`transition-transform duration-200 ${speedDialOpen ? "rotate-45" : ""}`}>
-            {speedDialOpen ? "✕" : "⚡"}
-          </span>
+          {speedDialOpen ? (
+            <>
+              <span className="text-xs">✕</span>
+              <span>Close</span>
+            </>
+          ) : (
+            <>
+              <span className="text-xs">⚡</span>
+              <span>Plan Actions</span>
+            </>
+          )}
         </button>
       </div>
 
