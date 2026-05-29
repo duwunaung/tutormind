@@ -141,6 +141,8 @@ stdout | __tests__/ai-eval.test.ts
 * **AI Spark Sandbox Widget**: Added a dashboard widget allowing tutors to input any topic and instantly generate a 5-minute hook/icebreaker, an active classroom game, and a real-world analogy.
 * **PDF Export for Lesson Plans**: Integrated browser-native `@media print` styles and a "Print / Save PDF" button for the lesson plan outline, matching the worksheet print experience.
 * **Global Typography Scale**: Redefined Tailwind CSS v4 variables in `globals.css` to increase all font sizes globally by 10-15% for improved readability.
+* **Branded Headers**: Integrated the custom TutorMind logo into the tutor workspace header, mobile menus, and administrative panel sidebars for uniform product styling.
+* **QA & Testing Suite Documentation**: Prepared [TESTING.md](TESTING.md) (comprehensive unit & E2E AI test plan) and [UAT.md](UAT.md) (user stories, manual walkthroughs, and release verdicts) to structure testing.
 
 ### 📄 Interactive Student Handouts & Worksheets (v1.2.0 - v1.2.1)
 * **A4 Paper Mockup View**: Adds an interactive preview styled like a physical A4 sheet of paper with metadata sections (Student Name, Date, Subject, Grade).
