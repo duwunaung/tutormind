@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     if (authResult.errorResponse) return authResult.errorResponse;
     const { session } = authResult;
 
-    const { topic } = await req.json();
+    const { topic, subject, gradeLevel } = await req.json();
 
     if (!topic || !topic.trim()) {
       return NextResponse.json(
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const prompt = `You are an expert creative educator. Generate three quick, high-engagement teaching ideas for the topic: "${topic.trim()}".
+    const prompt = `You are an expert creative educator. Generate three quick, high-engagement teaching ideas for the topic: "${topic.trim()}"${subject ? `, within the subject area of '${subject}'` : ""}${gradeLevel ? `, specifically tailored for students at the '${gradeLevel}' level` : ""}.
 
 Format your response as a JSON object with exactly these fields:
 {
@@ -49,7 +49,7 @@ Return ONLY this JSON object. No markdown formatting, no code blocks, no other t
       actorName: session.user.name,
       targetId: null,
       targetName: topic.trim(),
-      details: { topic: topic.trim() },
+      details: { topic: topic.trim(), subject, gradeLevel },
     });
 
     return NextResponse.json({ spark: result });

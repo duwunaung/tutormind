@@ -53,6 +53,7 @@ export default function LessonPlanPage() {
 
   // Refinement widget state (toggles prompt input panel visibility)
   const [isEditing, setIsEditing] = useState(false);
+  const [speedDialOpen, setSpeedDialOpen] = useState(false);
 
   // Refinement states
   const [refinePrompt, setRefinePrompt] = useState("");
@@ -292,6 +293,14 @@ Section Details:
 
   const handleRefine = async () => {
     if (!refinePrompt.trim() || refining || !lessonPlan) return;
+
+    if (lessonPlan.worksheet) {
+      const confirmProceed = window.confirm(
+        "Warning: Refining this lesson plan will invalidate/overwrite your currently generated worksheet. Are you sure you want to proceed?"
+      );
+      if (!confirmProceed) return;
+    }
+
     setRefining(true);
     setRefineError("");
 
@@ -426,50 +435,7 @@ Section Details:
         }
       `}} />
       {/* Header */}
-      <AppHeader
-          actions={
-            isEditing ? (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setRefinePrompt("");
-                    setRefineError("");
-                  }}
-                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-1.5 rounded-lg border border-gray-700 transition font-medium cursor-pointer"
-                >
-                  ❌ Close Refine
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setIsEditing(true);
-                    setRefinePrompt("");
-                    setRefineError("");
-                  }}
-                  className="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-1.5 rounded-lg transition font-medium cursor-pointer shadow-lg shadow-blue-600/15"
-                >
-                  ✨ Refine with AI
-                </button>
-                <button
-                  onClick={() => handleDownload("docx")}
-                  disabled={downloading || !lessonPlanId}
-                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-1.5 rounded-lg border border-gray-700 transition font-medium cursor-pointer"
-                >
-                  {downloading ? "Generating..." : "⬇ Download DOCX"}
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-1.5 rounded-lg border border-gray-700 transition font-medium cursor-pointer"
-                >
-                  🖨️ Print / Save PDF
-                </button>
-              </div>
-            )
-          }
-        />
+      <AppHeader />
 
         <div className="max-w-3xl w-full mx-auto px-4 py-6 sm:py-8 flex-1 flex flex-col justify-start">
 
@@ -580,20 +546,32 @@ Section Details:
                     disabled={refining}
                     className="flex-1 bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
-                  <button
-                    onClick={handleRefine}
-                    disabled={refining || !refinePrompt.trim()}
-                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white text-xs px-4 py-3 sm:py-2.5 rounded-xl transition font-semibold cursor-pointer shrink-0 h-[40px] flex items-center justify-center"
-                  >
-                    {refining ? (
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Refining...
-                      </span>
-                    ) : (
-                      "Apply ✨"
-                    )}
-                  </button>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <button
+                      onClick={handleRefine}
+                      disabled={refining || !refinePrompt.trim()}
+                      className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white text-xs px-4 py-2 rounded-xl transition font-semibold cursor-pointer h-[36px] flex items-center justify-center"
+                    >
+                      {refining ? (
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Refining...
+                        </span>
+                      ) : (
+                        "Apply ✨"
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditing(false);
+                        setRefinePrompt("");
+                        setRefineError("");
+                      }}
+                      className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs px-4 py-2 rounded-xl border border-gray-700 transition font-medium cursor-pointer h-[36px] flex items-center justify-center"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
                 {refineError && (
                   <p className="text-red-400 text-xs">⚠️ {refineError}</p>
@@ -960,7 +938,75 @@ Section Details:
 
           </div>
         </div>
+      </div>
 
+      {/* Floating Speed Dial FAB */}
+      <div className="fixed bottom-6 right-6 z-30 no-print flex flex-col items-end">
+        {speedDialOpen && (
+          <div className="mb-3 flex flex-col gap-3 items-end animate-in fade-in slide-in-from-bottom-5 duration-200">
+            {/* Refine Option */}
+            <div className="flex items-center gap-2">
+              <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-2.5 py-1 rounded-lg border border-gray-800 shadow-md backdrop-blur-sm select-none">
+                Refine with AI
+              </span>
+              <button
+                onClick={() => {
+                  setIsEditing(true);
+                  setSpeedDialOpen(false);
+                }}
+                className="w-11 h-11 bg-gray-900 border border-gray-800 hover:border-blue-500/50 hover:bg-gray-850 text-white rounded-full flex items-center justify-center shadow-md transition duration-200 cursor-pointer text-sm"
+                title="Refine with AI"
+              >
+                ✨
+              </button>
+            </div>
+
+            {/* DOCX Option */}
+            <div className="flex items-center gap-2">
+              <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-2.5 py-1 rounded-lg border border-gray-800 shadow-md backdrop-blur-sm select-none">
+                Download DOCX
+              </span>
+              <button
+                onClick={() => {
+                  handleDownload("docx");
+                  setSpeedDialOpen(false);
+                }}
+                disabled={downloading || !lessonPlanId}
+                className="w-11 h-11 bg-gray-900 border border-gray-800 hover:border-blue-500/50 hover:bg-gray-850 text-white rounded-full flex items-center justify-center shadow-md transition duration-200 cursor-pointer text-sm disabled:opacity-50"
+                title="Download DOCX"
+              >
+                {downloading ? "..." : "⬇"}
+              </button>
+            </div>
+
+            {/* PDF Option */}
+            <div className="flex items-center gap-2">
+              <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-2.5 py-1 rounded-lg border border-gray-800 shadow-md backdrop-blur-sm select-none">
+                Print / Save PDF
+              </span>
+              <button
+                onClick={() => {
+                  window.print();
+                  setSpeedDialOpen(false);
+                }}
+                className="w-11 h-11 bg-gray-900 border border-gray-800 hover:border-blue-500/50 hover:bg-gray-850 text-white rounded-full flex items-center justify-center shadow-md transition duration-200 cursor-pointer text-sm"
+                title="Print / Save PDF"
+              >
+                🖨️
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Main Toggle Button */}
+        <button
+          onClick={() => setSpeedDialOpen(!speedDialOpen)}
+          className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 transition-transform active:scale-95 duration-200 cursor-pointer text-xl z-40 focus:outline-none"
+        >
+          <span className={`transition-transform duration-200 ${speedDialOpen ? "rotate-45" : ""}`}>
+            {speedDialOpen ? "✕" : "⚡"}
+          </span>
+        </button>
       </div>
 
       <AppFooter />
