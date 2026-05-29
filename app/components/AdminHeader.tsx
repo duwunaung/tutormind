@@ -16,9 +16,14 @@ export default function AdminHeader() {
         <div className="h-full bg-gray-950 border-r border-gray-800 flex flex-col justify-between p-6">
           <div className="flex flex-col gap-8">
             <div
-              className="cursor-pointer"
+              className="cursor-pointer flex items-center gap-2.5"
               onClick={() => router.push("/admin")}
             >
+              <img 
+                src="/apple-icon.png" 
+                alt="TutorMind Logo" 
+                className="w-8 h-8 rounded-lg object-contain shadow-md shadow-blue-500/10" 
+              />
               <h1 className="text-white font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
                 TutorMind
               </h1>
@@ -86,7 +91,12 @@ export default function AdminHeader() {
 
       {/* Mobile Top Header (visible only below lg) */}
       <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-gray-950 border-b border-gray-800 sticky top-0 z-20 w-full">
-        <div className="cursor-pointer" onClick={() => router.push("/admin")}>
+        <div className="cursor-pointer flex items-center gap-2" onClick={() => router.push("/admin")}>
+          <img 
+            src="/apple-icon.png" 
+            alt="TutorMind Logo" 
+            className="w-7 h-7 rounded-lg object-contain shadow-md shadow-blue-500/10" 
+          />
           <h1 className="text-white font-extrabold text-lg tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
             TutorMind
           </h1>
@@ -139,12 +149,17 @@ export default function AdminHeader() {
           <div className="flex flex-col gap-8">
             <div className="flex items-center justify-between">
               <div
-                className="cursor-pointer"
+                className="cursor-pointer flex items-center gap-2.5"
                 onClick={() => {
                   router.push("/admin");
                   setIsOpen(false);
                 }}
               >
+                <img 
+                  src="/apple-icon.png" 
+                  alt="TutorMind Logo" 
+                  className="w-8 h-8 rounded-lg object-contain shadow-md shadow-blue-500/10" 
+                />
                 <h1 className="text-white font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
                   TutorMind
                 </h1>
