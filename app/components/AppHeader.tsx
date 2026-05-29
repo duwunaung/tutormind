@@ -26,18 +26,25 @@ export default function AppHeader({ mode, actions }: AppHeaderProps) {
 
         {/* Left — Logo + subtitle */}
         <div
-          className="cursor-pointer select-none"
+          className="cursor-pointer select-none flex items-center gap-2.5"
           onClick={() => {
             router.push("/dashboard");
             setMobileMenuOpen(false);
           }}
         >
-          <h1 className="text-white font-bold text-base tracking-tight">TutorMind</h1>
-          {subject && (
-            <p className="text-gray-400 text-[10px] sm:text-xs mt-0.5 hidden sm:block">
-              {subject}{gradeLevel ? ` · ${gradeLevel}` : ""}
-            </p>
-          )}
+          <img 
+            src="/apple-icon.png" 
+            alt="TutorMind Logo" 
+            className="w-8 h-8 rounded-lg object-contain shadow-md shadow-blue-500/10" 
+          />
+          <div className="flex flex-col">
+            <h1 className="text-white font-bold text-sm sm:text-base tracking-tight leading-tight">TutorMind</h1>
+            {subject && (
+              <p className="text-gray-400 text-[10px] mt-0.5 hidden sm:block leading-none">
+                {subject}{gradeLevel ? ` · ${gradeLevel}` : ""}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Right Desktop Nav (hidden on mobile) */}

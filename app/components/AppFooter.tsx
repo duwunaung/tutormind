@@ -14,7 +14,7 @@ export default function AppFooter() {
           <span className="font-medium text-gray-400">System Active</span>
           <span className="text-gray-700">|</span>
           <span className="font-mono bg-gray-900 border border-gray-800/80 text-gray-400 rounded-md px-2 py-0.5">
-            v1.2.1
+            v1.3.0
           </span>
         </div>
       </div>

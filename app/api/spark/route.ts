@@ -1,0 +1,63 @@
+import { NextResponse } from "next/server";
+import { verifyUser } from "@/lib/auth-util";
+import { groq } from "@/lib/ai";
+import { jsonrepair } from "jsonrepair";
+import { createAuditLog } from "@/lib/audit-logger";
+
+export async function POST(req: Request) {
+  try {
+    const authResult = await verifyUser();
+    if (authResult.errorResponse) return authResult.errorResponse;
+    const { session } = authResult;
+
+    const { topic } = await req.json();
+
+    if (!topic || !topic.trim()) {
+      return NextResponse.json(
+        { error: "Topic is required" },
+        { status: 400 }
+      );
+    }
+
+    const prompt = `You are an expert creative educator. Generate three quick, high-engagement teaching ideas for the topic: "${topic.trim()}".
+
+Format your response as a JSON object with exactly these fields:
+{
+  "hook": "A 5-minute attention-grabbing hook or icebreaker to start the lesson.",
+  "game": "A quick, active classroom game or hands-on activity to reinforce the concept.",
+  "analogy": "A simple, memorable real-world analogy to explain 'why this matters' to students."
+}
+
+Return ONLY this JSON object. No markdown formatting, no code blocks, no other text.`;
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1024,
+      temperature: 0.8,
+      response_format: { type: "json_object" },
+    });
+
+    const raw = completion.choices[0]?.message?.content || "{}";
+    const repaired = jsonrepair(raw);
+    const result = JSON.parse(repaired);
+
+    await createAuditLog({
+      action: "GENERATE_SPARK",
+      actorId: session.user.id,
+      actorEmail: session.user.email,
+      actorName: session.user.name,
+      targetId: null,
+      targetName: topic.trim(),
+      details: { topic: topic.trim() },
+    });
+
+    return NextResponse.json({ spark: result });
+  } catch (error) {
+    console.error("AI Spark generation error:", error);
+    return NextResponse.json(
+      { error: "Failed to generate teaching ideas" },
+      { status: 500 }
+    );
+  }
+}
