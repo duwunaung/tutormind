@@ -177,6 +177,69 @@ export default function NewPlanPage() {
     }
   }, [loading, answers, resolved, subject, router]);
 
+  const handleSwitchToChat = async () => {
+    const details: string[] = [];
+
+    if (answers.planType) {
+      details.push(`Plan Type: ${answers.planType === "course" ? "Course Plan" : "Lesson Plan"}`);
+    }
+    if (answers.planTitle?.trim()) {
+      details.push(`Title: ${answers.planTitle.trim()}`);
+    }
+
+    if (answers.planType === "course") {
+      const dur = answers.courseDuration === "other" ? answers.courseDurationCustom : answers.courseDuration;
+      const freq = answers.sessionsPerWeek === "other" ? answers.sessionsPerWeekCustom : answers.sessionsPerWeek;
+      const len = answers.sessionLength === "other" ? answers.sessionLengthCustom : answers.sessionLength;
+
+      if (dur?.trim()) details.push(`Duration: ${dur.trim()}`);
+      if (freq?.trim()) details.push(`Sessions per week: ${freq.trim()}`);
+      if (len?.trim()) details.push(`Session length: ${len.trim()}`);
+      if (answers.studentLevel) details.push(`Student level: ${answers.studentLevel}`);
+      if (answers.goal) details.push(`Main goal: ${answers.goal}`);
+      if (answers.instructions?.trim()) details.push(`Special instructions: ${answers.instructions.trim()}`);
+    } else {
+      const len = answers.sessionLength === "other" ? answers.sessionLengthCustom : answers.sessionLength;
+
+      if (answers.topic?.trim()) details.push(`Topic: ${answers.topic.trim()}`);
+      if (len?.trim()) details.push(`Session length: ${len.trim()}`);
+      if (answers.studentLevel) details.push(`Student level: ${answers.studentLevel}`);
+      if (answers.lessonGoal) details.push(`Lesson goal: ${answers.lessonGoal}`);
+      if (answers.instructions?.trim()) details.push(`Special instructions: ${answers.instructions.trim()}`);
+    }
+
+    if (details.length > 0) {
+      setLoading(true);
+      try {
+        const introMsg = `I want to design a plan. Here are my choices so far:\n\n${details.map(d => `- ${d}`).join("\n")}\n\nPlease help me complete this plan using these details.`;
+        const res = await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: answers.planTitle?.trim() || answers.topic?.trim() || "Draft Plan",
+            messages: [{ role: "user", content: introMsg }],
+            subject,
+            planType: answers.planType || "lesson",
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.sessionId) {
+            router.push(`/chat?session=${data.sessionId}`);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Handoff to chat failed:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    router.push("/chat");
+  };
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -310,7 +373,7 @@ export default function NewPlanPage() {
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
       {/* Header */}
-      <AppHeader mode="wizard" />
+      <AppHeader />
 
       <div className="max-w-lg w-full mx-auto px-4 sm:px-6 py-6 sm:py-12 flex-1 flex flex-col justify-start">
         {mode === "pick" ? (
@@ -356,17 +419,27 @@ export default function NewPlanPage() {
           /* ── Wizard ── */
           <>
             {/* Progress bar */}
-            <div className="mb-6">
-              <div className="flex justify-between text-xs text-gray-500 mb-2">
-                <span>Step {step} of {totalSteps}</span>
-                <span>{Math.round((step / totalSteps) * 100)}%</span>
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none">
+              <div className="flex-1">
+                <div className="flex justify-between text-xs text-gray-500 mb-2">
+                  <span>Step {step} of {totalSteps}</span>
+                  <span>{Math.round((step / totalSteps) * 100)}%</span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-1.5">
+                  <div
+                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${(step / totalSteps) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full bg-gray-800 rounded-full h-1.5">
-                <div
-                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${(step / totalSteps) * 100}%` }}
-                />
-              </div>
+              <button
+                onClick={handleSwitchToChat}
+                disabled={loading}
+                className="bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-gray-700 text-gray-400 hover:text-white text-xs px-3.5 py-2 rounded-xl transition font-semibold cursor-pointer shrink-0 flex items-center justify-center gap-1.5 self-end sm:self-center"
+                title="Switch to Chat flow, carrying over your answers"
+              >
+                <span>💬</span> Switch to Chat
+              </button>
             </div>
 
             {/* Step card */}

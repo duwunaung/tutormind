@@ -55,6 +55,12 @@ export default function LessonPlanPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [speedDialOpen, setSpeedDialOpen] = useState(false);
 
+  // Sharing states
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [isShared, setIsShared] = useState(false);
+  const [togglingShare, setTogglingShare] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
   // Refinement states
   const [refinePrompt, setRefinePrompt] = useState("");
   const [refining, setRefining] = useState(false);
@@ -250,6 +256,7 @@ Section Details:
 
         setLessonPlan(data.lessonPlan.structure);
         setLessonPlanId(data.lessonPlan.id);
+        setIsShared(!!data.lessonPlan.structure.isShared);
       } catch (err) {
         console.error("Lesson plan fetch error:", err);
         setError("Something went wrong");
@@ -260,6 +267,31 @@ Section Details:
 
     generate();
   }, [sessionId]);
+
+  const handleToggleShare = async () => {
+    if (!lessonPlanId || togglingShare) return;
+    setTogglingShare(true);
+    const newShared = !isShared;
+    try {
+      const res = await fetch(`/api/lesson-plan/${lessonPlanId}/share`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isShared: newShared }),
+      });
+      if (res.ok) {
+        setIsShared(newShared);
+        // Sync local lessonPlan object
+        setLessonPlan(prev => prev ? { ...prev, isShared: newShared } : null);
+      } else {
+        alert("Failed to update sharing settings.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
+    } finally {
+      setTogglingShare(false);
+    }
+  };
 
   const handleDownload = async (format: "docx") => {
     if (!lessonPlanId) return;
@@ -833,6 +865,12 @@ Section Details:
                         📋 {copyStatus === worksheetSubTab ? "Copied! ✓" : "Copy Current"}
                       </button>
                       <button
+                        onClick={() => setShareModalOpen(true)}
+                        className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs px-3.5 py-2 rounded-xl transition font-semibold cursor-pointer flex items-center gap-1.5"
+                      >
+                        🔗 Share Link
+                      </button>
+                      <button
                         onClick={() => window.print()}
                         className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-blue-600/10"
                       >
@@ -1030,6 +1068,88 @@ Section Details:
           )}
         </button>
       </div>
+
+      {/* Share Modal */}
+      {shareModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print animate-in fade-in duration-200">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShareModalOpen(false);
+                setCopiedLink(false);
+              }}
+              className="absolute top-4 right-4 text-gray-500 hover:text-white text-lg font-bold transition cursor-pointer"
+            >
+              ✕
+            </button>
+
+            {/* Modal Content */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-white text-lg font-bold tracking-tight flex items-center gap-2">
+                  <span>🔗</span> Share Handout
+                </h3>
+                <p className="text-gray-400 text-xs mt-1">
+                  Generate a secure public link for students to access worksheets and homework directly.
+                </p>
+              </div>
+
+              <div className="border-t border-gray-800/80 my-2"></div>
+
+              {/* Toggle Access */}
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <span className="text-white text-sm font-semibold block">Public Access</span>
+                  <span className="text-gray-500 text-[10px]">Allow anyone with the link to view student resources.</span>
+                </div>
+                <button
+                  onClick={handleToggleShare}
+                  disabled={togglingShare}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isShared ? "bg-blue-600" : "bg-gray-800"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      isShared ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Copy Link Input */}
+              {isShared && (
+                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <label className="text-xs font-semibold text-gray-400">Student Access Link</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${typeof window !== "undefined" ? window.location.origin : ""}/share/${lessonPlanId}`}
+                      className="flex-1 bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-300 font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 select-all"
+                    />
+                    <button
+                      onClick={() => {
+                        const link = `${window.location.origin}/share/${lessonPlanId}`;
+                        navigator.clipboard.writeText(link);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded-xl font-semibold transition cursor-pointer shrink-0"
+                    >
+                      {copiedLink ? "Copied! ✓" : "Copy"}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-500 leading-normal font-medium">
+                    ⚠️ The tutor answer key, private notes, and chat panel are completely stripped from this link for student privacy and security.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <AppFooter />
     </div>

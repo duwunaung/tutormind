@@ -213,7 +213,7 @@ function ChatContent() {
     return (
         <div className="min-h-screen bg-gray-950 flex flex-col">
             {/* Header */}
-            <AppHeader mode="chat" />
+            <AppHeader />
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-3xl mx-auto w-full">
