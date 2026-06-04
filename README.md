@@ -135,7 +135,12 @@ stdout | __tests__/ai-eval.test.ts
 
 ---
 
-## 📋 Changelog (v1.1.0 - v1.3.1)
+## 📋 Changelog (v1.1.0 - v1.4.0)
+
+### ⚡ Handout Out-of-Sync Warning & Regeneration (v1.4.0)
+* **Out-of-Sync State Tracking**: Automatically marks student handouts as out-of-sync when the underlying lesson plan is refined by the AI.
+* **UI Warning Banner & Indicators**: Injects a pulsing amber dot on the Worksheet tab and a warning banner inside the worksheet view.
+* **User-Controlled Regeneration**: Tutors can manually trigger handout regeneration with a single click instead of dealing with blocking browser prompts.
 
 ### ⚡ Navigation Redesign, Upgraded Spark Page & Floating Speed Dial (v1.3.1)
 * **Dedicated AI Spark Sandbox Page**: Moved the Spark tool from the dashboard to `/spark`, adding desktop header navigation and a mobile drawer link.

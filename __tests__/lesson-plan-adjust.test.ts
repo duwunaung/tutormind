@@ -222,4 +222,82 @@ describe("Lesson Plan Adjust Route", () => {
       },
     });
   });
+
+  it("should preserve worksheet and set worksheetOutOfSync flag if worksheet exists in currentStructure", async () => {
+    vi.mocked(verifyUser).mockResolvedValueOnce({
+      errorResponse: null,
+      session: { user: { id: "user-1" } },
+    } as any);
+
+    vi.mocked(prisma.session.findUnique).mockResolvedValueOnce({
+      id: "session-1",
+      userId: "user-1",
+      lessonPlan: { id: "plan-1" },
+    } as any);
+
+    const mockGroqResponse = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              type: "lesson",
+              title: "Adjusted Title",
+              subject: "Science",
+              gradeLevel: "Grade 6",
+            }),
+          },
+        },
+      ],
+    };
+
+    vi.mocked(groq.chat.completions.create).mockResolvedValueOnce(mockGroqResponse as any);
+
+    const mockUpdatedPlan = {
+      id: "plan-1",
+      structure: {
+        type: "lesson",
+        title: "Adjusted Title",
+        subject: "Science",
+        gradeLevel: "Grade 6",
+        worksheet: "Mock worksheet content",
+        worksheetOutOfSync: true,
+      },
+    };
+
+    vi.mocked(prisma.lessonPlan.update).mockResolvedValueOnce(mockUpdatedPlan as any);
+
+    const req = new Request("http://localhost/api/lesson-plan/adjust", {
+      method: "POST",
+      body: JSON.stringify({
+        sessionId: "session-1",
+        instruction: "Change title to Adjusted Title",
+        currentStructure: {
+          type: "lesson",
+          title: "Original Title",
+          worksheet: "Mock worksheet content",
+        },
+      }),
+    });
+
+    const res = await POST(req);
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.lessonPlan.structure.worksheet).toBe("Mock worksheet content");
+    expect(data.lessonPlan.structure.worksheetOutOfSync).toBe(true);
+
+    expect(prisma.lessonPlan.update).toHaveBeenCalledWith({
+      where: { id: "plan-1" },
+      data: {
+        structure: {
+          type: "lesson",
+          title: "Adjusted Title",
+          subject: "Science",
+          gradeLevel: "Grade 6",
+          worksheet: "Mock worksheet content",
+          worksheetOutOfSync: true,
+        },
+      },
+    });
+  });
 });

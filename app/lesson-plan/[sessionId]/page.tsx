@@ -39,6 +39,7 @@ type LessonPlan = {
   materials: string[];
   notes: string;
   worksheet?: string;
+  worksheetOutOfSync?: boolean;
 };
 
 export default function LessonPlanPage() {
@@ -326,13 +327,6 @@ Section Details:
   const handleRefine = async () => {
     if (!refinePrompt.trim() || refining || !lessonPlan) return;
 
-    if (lessonPlan.worksheet) {
-      const confirmProceed = window.confirm(
-        "Warning: Refining this lesson plan will invalidate/overwrite your currently generated worksheet. Are you sure you want to proceed?"
-      );
-      if (!confirmProceed) return;
-    }
-
     setRefining(true);
     setRefineError("");
 
@@ -547,13 +541,16 @@ Section Details:
               </button>
               <button
                 onClick={() => setActiveTab("worksheet")}
-                className={`py-3 px-4 text-xs font-bold tracking-wider uppercase border-b-2 transition duration-200 cursor-pointer whitespace-nowrap ${
+                className={`py-3 px-4 text-xs font-bold tracking-wider uppercase border-b-2 transition duration-200 cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   activeTab === "worksheet"
                     ? "border-blue-500 text-white"
                     : "border-transparent text-gray-500 hover:text-gray-300"
                 }`}
               >
                 📄 Student Handouts & Homework
+                {lessonPlan.worksheetOutOfSync && (
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse animate-duration-1000" title="Out of sync with updated plan" />
+                )}
               </button>
             </div>
           )}
@@ -803,6 +800,37 @@ Section Details:
               const parsedWorksheet = parseWorksheetContent(lessonPlan.worksheet);
               return (
                 <div className="space-y-6 animate-in fade-in duration-200">
+                  {/* Out of Sync Warning Banner */}
+                  {lessonPlan.worksheetOutOfSync && (
+                    <div className="bg-amber-950/40 border border-amber-500/20 text-amber-200 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print select-none">
+                      <div className="flex gap-2.5 items-start">
+                        <span className="text-xl">⚠️</span>
+                        <div>
+                          <h4 className="font-semibold text-sm text-amber-100">Handouts Out of Sync</h4>
+                          <p className="text-xs text-amber-300/80 leading-relaxed mt-0.5">
+                            This worksheet and homework was generated for an older version of the lesson plan. If you've refined the plan, regenerate the handouts to match.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleGenerateWorksheet}
+                        disabled={generatingWorksheet}
+                        className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-xl transition duration-200 cursor-pointer shadow-lg shadow-amber-600/10 whitespace-nowrap self-stretch sm:self-auto text-center flex items-center justify-center gap-1.5"
+                      >
+                        {generatingWorksheet ? (
+                          <>
+                            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Regenerating...
+                          </>
+                        ) : (
+                          <>
+                            <span>⚡</span> Regenerate Handout
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
                   {/* Worksheet Sub-tabs (interactive layout) */}
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-800 pb-3 no-print select-none">
                     <div className="flex flex-wrap gap-1 bg-gray-950/45 p-1 rounded-xl border border-gray-800/80">

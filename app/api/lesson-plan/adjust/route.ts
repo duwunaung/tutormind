@@ -69,6 +69,12 @@ Return ONLY the updated JSON object. No markdown, no backticks, no code blocks, 
         const repaired = jsonrepair(raw);
         const structure = JSON.parse(repaired);
 
+        // If the current plan has a worksheet, preserve it and mark as out-of-sync
+        if (currentStructure && currentStructure.worksheet) {
+            structure.worksheet = currentStructure.worksheet;
+            structure.worksheetOutOfSync = true;
+        }
+
         // Update the lesson plan in the DB
         const updatedPlan = await prisma.lessonPlan.update({
             where: { id: chatSession.lessonPlan.id },

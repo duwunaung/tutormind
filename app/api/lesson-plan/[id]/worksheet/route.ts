@@ -97,6 +97,7 @@ IMPORTANT:
       ...structure,
       worksheet,
     };
+    delete (updatedStructure as any).worksheetOutOfSync;
 
     const updatedPlan = await prisma.lessonPlan.update({
       where: { id },
