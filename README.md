@@ -3,7 +3,7 @@
   
   # 🧠 TutorMind
 
-  **The AI-Powered Tutoring Assistant & Curriculum Planner**
+  **The AI-Powered Tutoring Assistant & Curriculum Planner** (v1.4.1)
 
   *Transform rough lesson ideas into classroom-ready, fully structured curriculum plans.*
 
@@ -135,7 +135,22 @@ stdout | __tests__/ai-eval.test.ts
 
 ---
 
-## 📋 Changelog (v1.1.0 - v1.3.1)
+## 📋 Changelog (v1.1.0 - v1.4.1)
+
+### 🛡️ Content Safety & Pedagogical Quality Overhaul (v1.4.1)
+* **Content Safety Guardrails**: Added `CONTENT SAFETY RULES` to all 5 subject system prompts (Math, Science, English, History, Software Engineering) — AI now enforces age-appropriateness, bans violent/disturbing content, and ensures classroom-feasible materials.
+* **Prompt Injection Fix**: Strengthened `[READY_TO_GENERATE]` guard with a hard `SECURITY` constraint — AI can no longer be tricked by "Ignore all instructions" jailbreak attempts. E2E injection test now passes.
+* **Pedagogical Quality Rules**: Added `PEDAGOGICAL QUALITY RULES` to all generation prompts requiring differentiation (struggling + advanced), concrete specific examples, progressive scaffolding, and purpose-driven activities.
+* **Spark Sandbox Safety**: Lowered temperature from **0.8 → 0.6** and added safety guardrails to prevent inappropriate hooks/games/analogies.
+* **Worksheet Age-Appropriateness**: Added grade-level-specific safety rules to worksheet generation prompt — examples and problems must be age-appropriate and constructive.
+* **Plan Refinement Safety**: Added safety + quality preservation rules to the AI adjustment pipeline — inappropriate refinement requests are politely declined.
+* **Cross-Flow Coverage**: Safety and quality rules applied to all generation paths: chat flow, wizard flow, course plans, lesson plans, adjustments, worksheets, and spark sandbox.
+* **E2E Test Verification**: All 7 AI evaluation tests pass (injection resistance, schema validation, section math, safety keywords, quality score ≥4/5). All 53 unit tests pass.
+
+### ⚡ Handout Out-of-Sync Warning & Regeneration (v1.4.0)
+* **Out-of-Sync State Tracking**: Automatically marks student handouts as out-of-sync when the underlying lesson plan is refined by the AI.
+* **UI Warning Banner & Indicators**: Injects a pulsing amber dot on the Worksheet tab and a warning banner inside the worksheet view.
+* **User-Controlled Regeneration**: Tutors can manually trigger handout regeneration with a single click instead of dealing with blocking browser prompts.
 
 ### ⚡ Navigation Redesign, Upgraded Spark Page & Floating Speed Dial (v1.3.1)
 * **Dedicated AI Spark Sandbox Page**: Moved the Spark tool from the dashboard to `/spark`, adding desktop header navigation and a mobile drawer link.

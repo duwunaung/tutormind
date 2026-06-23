@@ -74,6 +74,21 @@ export async function POST(req: Request) {
 CHAT SESSION:
 ${chatHistory}
 
+CRITICAL CONTENT SAFETY RULES (you MUST follow these):
+- ALL content MUST be age-appropriate for the grade level specified in the chat.
+- NEVER include violent, disturbing, scary, or traumatic scenarios in any example, activity, or material.
+- Use only safe, positive, classroom-appropriate content.
+- Avoid references to death, injury, weapons, or psychological harm.
+- Materials suggested must be real, classroom-feasible items (e.g. pencils, worksheets, whiteboard, lab equipment).
+- For young students (K-8), use only gentle, fun, everyday examples.
+
+PEDAGOGICAL QUALITY RULES (you MUST follow these):
+- Include DIFFERENTIATION: provide specific strategies for struggling students AND extension ideas for advanced learners.
+- Use CONCRETE, SPECIFIC examples — name actual topics, activities, or problems. Avoid generic descriptions.
+- Structure learning PROGRESSIVELY across sections: each section should build on the previous one.
+- Include SCAFFOLDING: break down complex skills into smaller, teachable steps within each section.
+- Every section activity should have a clear PURPOSE tied to the learning objective.
+
 Generate a detailed course plan in this EXACT JSON format.
 IMPORTANT: You MUST calculate the exact number of session sections needed based on the "Course duration" and "Sessions per week" specified in the chat history (for example, "2 weeks" duration at "3x sessions per week" = 6 sessions). You must generate exactly that number of section objects in the "sections" array (each object representing one session). Do not generate extra sections or sessions beyond this calculated count.
 IMPORTANT: In description fields, use plain text only. Do NOT use code blocks, backticks, or special characters inside string values.
@@ -109,6 +124,21 @@ Return ONLY the JSON object. No markdown, no backticks, no code blocks, no extra
 
 CHAT SESSION:
 ${chatHistory}
+
+CRITICAL CONTENT SAFETY RULES (you MUST follow these):
+- ALL content MUST be age-appropriate for the grade level specified in the chat.
+- NEVER include violent, disturbing, scary, or traumatic scenarios in any example, activity, or material.
+- Use only safe, positive, classroom-appropriate content.
+- Avoid references to death, injury, weapons, or psychological harm.
+- Materials suggested must be real, classroom-feasible items (e.g. pencils, worksheets, whiteboard, props).
+- For young students (K-8), use only gentle, fun, everyday examples.
+
+PEDAGOGICAL QUALITY RULES (you MUST follow these):
+- Include DIFFERENTIATION: provide specific strategies for struggling students AND extension ideas for advanced learners.
+- Use CONCRETE, SPECIFIC examples — name actual topics, problems, or activities. Avoid generic descriptions.
+- Structure learning PROGRESSIVELY: introduction should set foundation, main activity builds on it, wrap-up reinforces.
+- Include SCAFFOLDING: break down complex skills into smaller, teachable steps.
+- Every activity should have a clear PURPOSE tied to the learning objective.
 
 Generate a detailed lesson plan in this EXACT JSON format.
 IMPORTANT: In description fields, use plain text only. Do NOT use code blocks, backticks, or special characters inside string values.

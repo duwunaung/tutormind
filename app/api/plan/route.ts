@@ -59,6 +59,19 @@ function buildPrompt(answers: Answers, subject: string): string {
 - Student level: ${answers.studentLevel}
 - Main goal: ${answers.goal}${answers.instructions ? `\n- Specific instructions: ${answers.instructions}` : ""}
 
+CONTENT SAFETY RULES:
+- ALL content MUST be age-appropriate for ${answers.studentLevel || "the specified grade level"} students.
+- NEVER include violent, disturbing, scary, or traumatic scenarios.
+- Use only safe, positive, classroom-appropriate content.
+- Materials suggested must be real, classroom-feasible items.
+
+PEDAGOGICAL QUALITY RULES:
+- Include DIFFERENTIATION: strategies for struggling students AND extension for advanced learners.
+- Use CONCRETE, SPECIFIC examples — name actual topics, problems, or activities.
+- Structure learning PROGRESSIVELY: build from foundation to application.
+- Include SCAFFOLDING: break complex skills into smaller steps.
+- Every activity should have a clear PURPOSE tied to the learning objective.
+
 Please generate a comprehensive course plan with sections, objectives, activities, and assessments.`;
   }
 
@@ -68,6 +81,19 @@ Please generate a comprehensive course plan with sections, objectives, activitie
 - Session length: ${answers.sessionLength}
 - Student level: ${answers.studentLevel}
 - Lesson goal: ${answers.lessonGoal}${answers.instructions ? `\n- Specific instructions: ${answers.instructions}` : ""}
+
+CONTENT SAFETY RULES:
+- ALL content MUST be age-appropriate for ${answers.studentLevel || "the specified grade level"} students.
+- NEVER include violent, disturbing, scary, or traumatic scenarios.
+- Use only safe, positive, classroom-appropriate content.
+- Materials suggested must be real, classroom-feasible items.
+
+PEDAGOGICAL QUALITY RULES:
+- Include DIFFERENTIATION: strategies for struggling students AND extension for advanced learners.
+- Use CONCRETE, SPECIFIC examples — name actual topics, problems, or activities.
+- Structure learning PROGRESSIVELY: introduction sets foundation, main activity builds, wrap-up reinforces.
+- Include SCAFFOLDING: break complex skills into smaller steps.
+- Every activity should have a clear PURPOSE tied to the learning objective.
 
 Please generate a detailed lesson plan with introduction, main activity, wrap-up, and assessment.`;
 }
