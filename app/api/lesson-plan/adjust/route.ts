@@ -50,6 +50,20 @@ ${JSON.stringify(currentStructure, null, 2)}
 USER ADJUSTMENT INSTRUCTION:
 ${instruction}
 
+CRITICAL CONTENT SAFETY RULES (you MUST follow these):
+- ALL content MUST be age-appropriate for the plan's grade level.
+- NEVER include violent, disturbing, scary, or traumatic scenarios.
+- Use only safe, positive, classroom-appropriate content.
+- Avoid references to death, injury, weapons, or psychological harm.
+- If the user requests inappropriate content, politely decline and preserve the original content.
+
+PEDAGOGICAL QUALITY RULES (you MUST follow these):
+- Include DIFFERENTIATION: provide specific strategies for struggling students AND extension ideas for advanced learners.
+- Use CONCRETE, SPECIFIC examples — name actual topics, problems, or activities. Avoid generic descriptions.
+- Structure learning PROGRESSIVELY: each section or phase should build on the previous one.
+- Include SCAFFOLDING: break down complex skills into smaller, teachable steps.
+- Every activity should have a clear PURPOSE tied to the learning objective.
+
 Generate the updated plan in the EXACT same JSON format.
 Ensure you preserve all existing fields and sections that do not need changes, while precisely applying the user's modifications.
 In description fields, use plain text only. Do NOT use code blocks, backticks, or special characters inside string values.

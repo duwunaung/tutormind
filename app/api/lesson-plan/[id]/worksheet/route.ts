@@ -41,6 +41,14 @@ LESSON PLAN DETAILS:
 - Materials Needed: ${Array.isArray(structure.materials) ? structure.materials.join(", ") : ""}
 - Plan Outline: ${JSON.stringify(structure)}
 
+CRITICAL CONTENT SAFETY RULES (you MUST follow these):
+- This worksheet is for ${structure.gradeLevel} students. ALL content MUST be age-appropriate.
+- NEVER include violent, disturbing, scary, or traumatic scenarios in any example or problem.
+- Use only safe, positive, classroom-appropriate content.
+- Avoid references to death, injury, weapons, or psychological harm.
+- For young students (K-8), use only gentle, fun, everyday examples.
+- All practice problems and examples must be educational and constructive.
+
 Please generate the content in this EXACT Markdown structure:
 
 # Student Worksheet: ${structure.title}
